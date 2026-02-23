@@ -16,6 +16,9 @@ This application allows users to:
 
 The frontend communicates with a live Spring Boot backend API.
 
+[Application Mock Up](https://www.figma.com/make/HdItIJHavBLz9ZtOwReDFr/Food-Tracking-and-Recommendation-Site?t=qHGGrrXMfMJUUZby-1).
+
+
 ---
 
 ## Tech Stack
@@ -79,8 +82,6 @@ Features:
 - Role-based access (Admin vs User)
 
 ---
-
-
 
 ## Development Workflow
 
