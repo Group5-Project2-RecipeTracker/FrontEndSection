@@ -1,5 +1,29 @@
 # Group 5 – Recipe Tracker Frontend
 
+# 🚀 Running the App Locally
+
+## 1️⃣ Install Dependencies
+
+Open a terminal in the project root and run:
+
+npm install
+
+---
+
+## 2️⃣ Start the Development Server
+
+npm run dev
+
+---
+
+## 🌐 Local Host
+
+Once started, open your browser and go to:
+
+http://localhost:5173
+
+The server will automatically reload when you make changes.
+
 ## Overview
 
 The Recipe Tracker Frontend is a React-based web application that connects to the Group 5 Recipe Tracker & Meal Planner API.
