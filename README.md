@@ -1,8 +1,8 @@
 # Group 5 – Recipe Tracker Frontend
 
-# 🚀 Running the App Locally
+# Running the App Locally
 
-## 1️⃣ Install Dependencies
+##  Install Dependencies
 
 Open a terminal in the project root and run:
 
@@ -10,13 +10,13 @@ npm install
 
 ---
 
-## 2️⃣ Start the Development Server
+##  Start the Development Server
 
 npm run dev
 
 ---
 
-## 🌐 Local Host
+## Local Host
 
 Once started, open your browser and go to:
 
