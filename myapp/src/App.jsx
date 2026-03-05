@@ -2,6 +2,8 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import Layout from "./components/Layout";
 
 import Login from "./pages/Login.jsx";
+
+import Signup from "./pages/Signup.jsx";
 import Dashboard from "./pages/Dashboard.jsx";
 import NotFound from "./pages/NotFound.jsx";
 import Projects from "./pages/Projects.jsx";
@@ -18,7 +20,7 @@ export default function App() {
 
       {/* Pages WITH Navbar */}
       <Route element={<Layout />}>
-        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/dashboard" element={<dashboard />} />
         <Route path="/projects" element={<Projects />} />
 
         <Route path="/projects/:projectId" element={<ProjectLayout />}>
@@ -33,8 +35,9 @@ export default function App() {
 
       {/* Pages WITHOUT Navbar */}
       <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<Signup/>} />
 
-      <Route path="/" element={<Navigate to="/dashboard" replace />} />
+      <Route path="/" element={<Navigate to="/signup" replace />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
