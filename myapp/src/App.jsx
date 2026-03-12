@@ -20,7 +20,7 @@ export default function App() {
 
       {/* Pages WITH Navbar */}
       <Route element={<Layout />}>
-        <Route path="/dashboard" element={<dashboard />} />
+        <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/projects" element={<Projects />} />
 
         <Route path="/projects/:projectId" element={<ProjectLayout />}>
