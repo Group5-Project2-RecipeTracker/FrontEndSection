@@ -6,6 +6,21 @@ export default function App() {
     const [showForm, setShowForm] = useState(false);
     const [search, setSearch] = useState("");
 
+    function addCatalogFood(food, meal = "lunch") {
+        const newFood = {
+            name: food.name,
+            cal: food.calories || food.cal,
+            protein: food.protein_g || food.protein || 0,
+            carbs: food.carbs_g || food.carbs || 0,
+            fats: food.fat_g || food.fats || 0
+        };
+
+        setMeals(prev => ({
+            ...prev,
+            [meal]: [...prev[meal], newFood]
+        }));
+    }
+
     const [meals, setMeals] = useState({
         breakfast: [],
         lunch: [],
@@ -27,13 +42,27 @@ export default function App() {
         email: "",
         goal: ""
     });
-
+    const foodCatalog = [
+        { id: 1, name: "Chicken Breast", cal: 200, protein: 38, carbs: 0, fats: 4, category: "Protein" },
+        { id: 2, name: "Brown Rice", cal: 215, protein: 5, carbs: 45, fats: 2, category: "Carb" },
+        { id: 3, name: "Scrambled Eggs", cal: 180, protein: 12, carbs: 2, fats: 13, category: "Protein" },
+        { id: 4, name: "Oatmeal", cal: 150, protein: 5, carbs: 27, fats: 3, category: "Carb" },
+        { id: 5, name: "Greek Yogurt", cal: 100, protein: 17, carbs: 6, fats: 1, category: "Dairy" },
+        { id: 6, name: "Banana", cal: 89, protein: 1, carbs: 23, fats: 0, category: "Fruit" },
+        { id: 7, name: "Salmon Fillet", cal: 350, protein: 40, carbs: 0, fats: 20, category: "Protein" },
+        { id: 8, name: "Sweet Potato", cal: 180, protein: 4, carbs: 41, fats: 0, category: "Carb" }
+    ];
     const allFoods = [
         ...meals.breakfast,
         ...meals.lunch,
         ...meals.dinner,
         ...meals.snack
     ];
+
+    const filteredFoods = foodCatalog.filter(food =>
+        food.name.toLowerCase().includes(search.toLowerCase()) ||
+        food.category.toLowerCase().includes(search.toLowerCase())
+    );
 
     const totalCal = allFoods.reduce((a, b) => a + b.cal, 0);
     const totalProtein = allFoods.reduce((a, b) => a + b.protein, 0);
@@ -362,14 +391,64 @@ export default function App() {
             {page === "catalog" && (
                 <div style={{ maxWidth: 880, margin: "0 auto", padding: 24 }}>
                     <h2 style={{ margin: "0 0 4px" }}>Food Catalog</h2>
-                    <p style={{ margin: "0 0 16px", fontSize: 13, color: "#999" }}>Browse foods and add them to your log</p>
+                    <p style={{ margin: "0 0 16px", fontSize: 13, color: "#999" }}>
+                        Browse foods and add them to your log
+                    </p>
+
                     <input
-                        placeholder="Search..."
+                        placeholder="Search by food or category..."
                         value={search}
                         onChange={e => setSearch(e.target.value)}
                         style={{ ...inputStyle, maxWidth: 300, marginBottom: 20 }}
                     />
-                    <p style={{ color: "#bbb", fontSize: 13 }}>No foods available yet.</p>
+
+                    {filteredFoods.length === 0 ? (
+                        <p style={{ color: "#bbb", fontSize: 13 }}>No matching foods found.</p>
+                    ) : (
+                        <div style={{ display: "grid", gap: 12 }}>
+                            {filteredFoods.map(food => (
+                                <div
+                                    key={food.id}
+                                    style={{
+                                        background: "white",
+                                        border: "1px solid #eee",
+                                        borderRadius: 10,
+                                        padding: 16,
+                                        display: "flex",
+                                        justifyContent: "space-between",
+                                        alignItems: "center"
+                                    }}
+                                >
+                                    <div>
+                                        <p style={{ margin: "0 0 4px", fontWeight: "bold", fontSize: 14 }}>
+                                            {food.name}
+                                        </p>
+                                        <p style={{ margin: "0 0 4px", fontSize: 12, color: "#888" }}>
+                                            {food.category}
+                                        </p>
+                                        <p style={{ margin: 0, fontSize: 12, color: "#555" }}>
+                                            {food.cal} cal · P {food.protein}g · C {food.carbs}g · F {food.fats}g
+                                        </p>
+                                    </div>
+
+                                    <button
+                                        onClick={() => addCatalogFood(food)}
+                                        style={{
+                                            background: "#333",
+                                            color: "white",
+                                            border: "none",
+                                            borderRadius: 6,
+                                            padding: "8px 14px",
+                                            fontSize: 12,
+                                            cursor: "pointer"
+                                        }}
+                                    >
+                                        Add
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    )}
                 </div>
             )}
 
