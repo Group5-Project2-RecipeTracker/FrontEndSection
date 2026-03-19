@@ -1,25 +1,10 @@
 import { useState } from "react";
-export default function App() {
 
+export default function App() {
     const [page, setPage] = useState("dashboard");
     const [date, setDate] = useState("");
     const [showForm, setShowForm] = useState(false);
     const [search, setSearch] = useState("");
-
-    function addCatalogFood(food, meal = "lunch") {
-        const newFood = {
-            name: food.name,
-            cal: food.calories || food.cal,
-            protein: food.protein_g || food.protein || 0,
-            carbs: food.carbs_g || food.carbs || 0,
-            fats: food.fat_g || food.fats || 0
-        };
-
-        setMeals(prev => ({
-            ...prev,
-            [meal]: [...prev[meal], newFood]
-        }));
-    }
 
     const [meals, setMeals] = useState({
         breakfast: [],
@@ -42,6 +27,22 @@ export default function App() {
         email: "",
         goal: ""
     });
+
+    function addCatalogFood(food, meal = "lunch") {
+        const newFood = {
+            name: food.name,
+            cal: food.calories || food.cal,
+            protein: food.protein_g || food.protein || 0,
+            carbs: food.carbs_g || food.carbs || 0,
+            fats: food.fat_g || food.fats || 0
+        };
+
+        setMeals(prev => ({
+            ...prev,
+            [meal]: [...prev[meal], newFood]
+        }));
+    }
+
     const foodCatalog = [
         { id: 1, name: "Chicken Breast", cal: 200, protein: 38, carbs: 0, fats: 4, category: "Protein" },
         { id: 2, name: "Brown Rice", cal: 215, protein: 5, carbs: 45, fats: 2, category: "Carb" },
@@ -52,6 +53,7 @@ export default function App() {
         { id: 7, name: "Salmon Fillet", cal: 350, protein: 40, carbs: 0, fats: 20, category: "Protein" },
         { id: 8, name: "Sweet Potato", cal: 180, protein: 4, carbs: 41, fats: 0, category: "Carb" }
     ];
+
     const allFoods = [
         ...meals.breakfast,
         ...meals.lunch,
@@ -71,7 +73,7 @@ export default function App() {
 
     function saveFood() {
         if (!form.name || !form.calories) {
-            alert("Name and calories are requird.");
+            alert("Name and calories are required.");
             return;
         }
 
@@ -83,8 +85,20 @@ export default function App() {
             fats: Number(form.fats) || 0
         };
 
-        setMeals({ ...meals, [form.meal]: [...meals[form.meal], newFood] });
-        setForm({ ...form, name: "", calories: "", protein: "", carbs: "", fats: "" });
+        setMeals({
+            ...meals,
+            [form.meal]: [...meals[form.meal], newFood]
+        });
+
+        setForm({
+            ...form,
+            name: "",
+            calories: "",
+            protein: "",
+            carbs: "",
+            fats: ""
+        });
+
         setShowForm(false);
     }
 
@@ -132,23 +146,29 @@ export default function App() {
             return arr[Math.floor(Math.random() * arr.length)];
         }
 
-        if (totalCal < 1000)
+        if (totalCal < 1000) {
             recs.push("You're under your calorie goal. Try something like " + random(balancedMeals) + ".");
+        }
 
-        if (totalCal > 2000)
+        if (totalCal > 2000) {
             recs.push("You've gone over your calorie goal today. Consider lighter meals like grilled chicken salad or vegetables with lean protein.");
+        }
 
-        if (totalProtein < 75)
+        if (totalProtein < 75) {
             recs.push("Protein is low. Try adding " + random(proteinFoods) + ".");
+        }
 
-        if (totalCarbs < 100)
+        if (totalCarbs < 100) {
             recs.push("Carbs are low. A good option could be " + random(carbFoods) + ".");
+        }
 
-        if (totalFats < 30)
+        if (totalFats < 30) {
             recs.push("Healthy fats are low. Try adding " + random(fatFoods) + ".");
+        }
 
-        if (totalProtein >= 150)
+        if (totalProtein >= 150) {
             recs.push("Protein goal reached! Great job hitting your target.");
+        }
 
         return recs;
     }
@@ -166,23 +186,49 @@ export default function App() {
 
     return (
         <div style={{ fontFamily: "Arial, sans-serif", background: "#f5f5f5", minHeight: "100vh" }}>
-
             <div style={{ background: "white", borderBottom: "1px solid #ddd", display: "flex", alignItems: "center", padding: "0 20px", height: 52 }}>
                 <button
                     onClick={() => setPage("dashboard")}
-                    style={{ background: "none", border: "none", borderBottom: page === "dashboard" ? "2px solid #333" : "2px solid transparent", cursor: "pointer", fontSize: 14, padding: "0 12px", height: 52, color: page === "dashboard" ? "#111" : "#888" }}
+                    style={{
+                        background: "none",
+                        border: "none",
+                        borderBottom: page === "dashboard" ? "2px solid #333" : "2px solid transparent",
+                        cursor: "pointer",
+                        fontSize: 14,
+                        padding: "0 12px",
+                        height: 52,
+                        color: page === "dashboard" ? "#111" : "#888"
+                    }}
                 >
                     Dashboard
                 </button>
                 <button
                     onClick={() => setPage("catalog")}
-                    style={{ background: "none", border: "none", borderBottom: page === "catalog" ? "2px solid #333" : "2px solid transparent", cursor: "pointer", fontSize: 14, padding: "0 12px", height: 52, color: page === "catalog" ? "#111" : "#888" }}
+                    style={{
+                        background: "none",
+                        border: "none",
+                        borderBottom: page === "catalog" ? "2px solid #333" : "2px solid transparent",
+                        cursor: "pointer",
+                        fontSize: 14,
+                        padding: "0 12px",
+                        height: 52,
+                        color: page === "catalog" ? "#111" : "#888"
+                    }}
                 >
                     Food Catalog
                 </button>
                 <button
                     onClick={() => setPage("profile")}
-                    style={{ background: "none", border: "none", borderBottom: page === "profile" ? "2px solid #333" : "2px solid transparent", cursor: "pointer", fontSize: 14, padding: "0 12px", height: 52, color: page === "profile" ? "#111" : "#888" }}
+                    style={{
+                        background: "none",
+                        border: "none",
+                        borderBottom: page === "profile" ? "2px solid #333" : "2px solid transparent",
+                        cursor: "pointer",
+                        fontSize: 14,
+                        padding: "0 12px",
+                        height: 52,
+                        color: page === "profile" ? "#111" : "#888"
+                    }}
                 >
                     Profile
                 </button>
@@ -190,7 +236,6 @@ export default function App() {
 
             {page === "dashboard" && (
                 <div style={{ display: "flex", height: "calc(100vh - 52px)" }}>
-
                     <div style={{ width: 280, background: "white", borderRight: "1px solid #ddd", padding: 18, overflowY: "auto" }}>
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
                             <h2 style={{ margin: 0, fontSize: 16 }}>Food Log</h2>
@@ -254,8 +299,12 @@ export default function App() {
                                 />
 
                                 <div style={{ display: "flex", gap: 8 }}>
-                                    <button onClick={saveFood} style={{ flex: 1, background: "#333", color: "white", border: "none", borderRadius: 6, padding: 8, cursor: "pointer" }}>Save</button>
-                                    <button onClick={() => setShowForm(false)} style={{ flex: 1, background: "#eee", border: "none", borderRadius: 6, padding: 8, cursor: "pointer" }}>Cancel</button>
+                                    <button onClick={saveFood} style={{ flex: 1, background: "#333", color: "white", border: "none", borderRadius: 6, padding: 8, cursor: "pointer" }}>
+                                        Save
+                                    </button>
+                                    <button onClick={() => setShowForm(false)} style={{ flex: 1, background: "#eee", border: "none", borderRadius: 6, padding: 8, cursor: "pointer" }}>
+                                        Cancel
+                                    </button>
                                 </div>
                             </div>
                         )}
@@ -266,8 +315,8 @@ export default function App() {
                                     <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
                                         <b style={{ fontSize: 13, textTransform: "capitalize" }}>{meal}</b>
                                         <span style={{ fontSize: 12, color: "#999" }}>
-                      {meals[meal].reduce((a, b) => a + b.cal, 0)} kcal
-                    </span>
+                                            {meals[meal].reduce((a, b) => a + b.cal, 0)} kcal
+                                        </span>
                                     </div>
 
                                     {meals[meal].length === 0 && (
@@ -278,9 +327,14 @@ export default function App() {
                                         <div key={i} style={{ display: "flex", justifyContent: "space-between", fontSize: 12, borderTop: "1px solid #eee", padding: "4px 0" }}>
                                             <span>{f.name}</span>
                                             <span style={{ color: "#999" }}>
-                        {f.cal} cal
-                        <button onClick={() => removeFood(meal, i)} style={{ background: "none", border: "none", color: "#bbb", cursor: "pointer", marginLeft: 4 }}>×</button>
-                      </span>
+                                                {f.cal} cal
+                                                <button
+                                                    onClick={() => removeFood(meal, i)}
+                                                    style={{ background: "none", border: "none", color: "#bbb", cursor: "pointer", marginLeft: 4 }}
+                                                >
+                                                    ×
+                                                </button>
+                                            </span>
                                         </div>
                                     ))}
                                 </div>
@@ -370,8 +424,11 @@ export default function App() {
                         <p style={{ margin: "0 0 16px", fontSize: 12, color: "#999" }}>Based on what you've logged</p>
 
                         {allFoods.length === 0 && (
-                            <p style={{ color: "#bbb", fontSize: 13, textAlign: "center", marginTop: 40 }}>Log food first to see recommendations.</p>
+                            <p style={{ color: "#bbb", fontSize: 13, textAlign: "center", marginTop: 40 }}>
+                                Log food first to see recommendations.
+                            </p>
                         )}
+
                         {allFoods.length > 0 && getRecs().length === 0 && (
                             <div style={{ background: "#f5f5f5", border: "1px solid #ddd", borderRadius: 8, padding: 14 }}>
                                 <p style={{ margin: 0, fontSize: 13, color: "#555" }}>You're on track with all your goals!</p>
@@ -384,7 +441,6 @@ export default function App() {
                             </div>
                         ))}
                     </div>
-
                 </div>
             )}
 
@@ -522,10 +578,8 @@ export default function App() {
                             </div>
                         </div>
                     </div>
-
                 </div>
             )}
-
         </div>
     );
 }
