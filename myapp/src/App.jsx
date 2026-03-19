@@ -5,6 +5,7 @@ import Login from "./pages/Login.jsx";
 
 import Signup from "./pages/Signup.jsx";
 import Dashboard from "./pages/Dashboard.jsx";
+import Admin from "./pages/Admin.jsx";
 import NotFound from "./pages/NotFound.jsx";
 import Projects from "./pages/Projects.jsx";
 import ProjectLayout from "./pages/projects/ProjectLayout.jsx";
@@ -36,6 +37,8 @@ export default function App() {
       {/* Pages WITHOUT Navbar */}
       <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup/>} />
+        <Route path="/Admin" element={<Admin/>} />
+
 
       <Route path="/" element={<Navigate to="/signup" replace />} />
       <Route path="*" element={<NotFound />} />
