@@ -1,38 +1,28 @@
-import { Link } from "react-router-dom";
+import "../styles/navbar.css";
 
-export default function Navbar() {
-  return (
-    <nav style={styles.nav}>
-      <h2 style={styles.logo}>MyApp</h2>
+export default function Navbar({ page, setPage }) {
+    return (
+        <div className="nav">
+            <button
+                className={`nav-btn ${page === "dashboard" ? "active" : ""}`}
+                onClick={() => setPage("dashboard")}
+            >
+                Dashboard
+            </button>
 
-      <div style={styles.links}>
-        <Link to="/dashboard" style={styles.link}>Dashboard</Link>
-        <Link to="/projects" style={styles.link}>Projects</Link>
-        <Link to="/login" style={styles.link}>Login</Link>
-      </div>
-    </nav>
-  );
+            <button
+                className={`nav-btn ${page === "catalog" ? "active" : ""}`}
+                onClick={() => setPage("catalog")}
+            >
+                Food Catalog
+            </button>
+
+            <button
+                className={`admin-btn ${page === "admin" ? "active" : ""}`}
+                onClick={() => setPage("admin")}
+            >
+                Admin
+            </button>
+        </div>
+    );
 }
-
-const styles = {
-  nav: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: "16px 24px",
-    background: "#111827",
-    color: "white"
-  },
-  logo: {
-    margin: 0
-  },
-  links: {
-    display: "flex",
-    gap: "20px"
-  },
-  link: {
-    color: "white",
-    textDecoration: "none",
-    fontWeight: "500"
-  }
-};
