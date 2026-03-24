@@ -6,6 +6,7 @@
 
 Open a terminal in the project root and run:
 
+cd to myapp
 npm install
 
 ---

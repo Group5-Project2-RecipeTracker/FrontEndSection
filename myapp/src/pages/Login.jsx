@@ -1,6 +1,36 @@
 import { useState } from "react";
+import { signInWithPopup } from "firebase/auth";
+import { useNavigate } from "react-router-dom";
+import { auth, provider } from "../firebase";
+
 export default function Login() {
     const[showPass, setShowPass] = useState(false);
+
+    const handleGoogleLogin = async () => {
+        try {
+            const result = await signInWithPopup(auth, provider);
+            const token = await result.user.getIdToken();
+
+            const res = await fetch("http://localhost:8080/api/profile", {
+                method: "GET",
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+
+            if (!res.ok) {
+                throw new Error("Backend authentication failed");
+            }
+
+            const data = await res.text();
+            console.log(data);
+
+            navigate("/dashboard");
+        } catch (err) {
+            console.error("Google login failed:", err);
+        }
+    };
+
     return (
         <div style={{minHeight: '100vh',display: 'flex', alignItems: 'center',
         justifyContent: 'center',background:"linear-gradient(125deg,#fdf6f0 0%,#f0f4ff 50%,#f5f0fb 100%)",
@@ -61,7 +91,7 @@ export default function Login() {
                     <div style={{ flex: 1, height: 1, background: "#ece8e4" }} />
                 </div>
 
-                <button className="gbtn" style={{
+                <button className="gbtn" onClick={handleGoogleLogin} style={{
                     width: "100%", padding: 11, background: "transparent",
                     border: "1.5px solid #e8e4e0", borderRadius: 9, cursor: "pointer",
                     display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
