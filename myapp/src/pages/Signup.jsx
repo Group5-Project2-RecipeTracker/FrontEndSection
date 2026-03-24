@@ -1,12 +1,8 @@
 import { useState } from "react";
-<<<<<<< HEAD
 import { signInWithPopup } from "firebase/auth";
 import { auth, provider } from "../firebase";
 import { useNavigate } from "react-router-dom";
-=======
-import { useNavigate } from "react-router-dom";
 import { signUp, signInWithGoogle } from "../services/authService";
->>>>>>> main
 
 export default function Signup() {
     const [firstName, setFirstName] = useState("");
@@ -34,21 +30,6 @@ export default function Signup() {
             setLoading(false);
         }
     };
-
-    const handleGoogle = async () => {
-        setError("");
-        setLoading(true);
-        try {
-            await signInWithGoogle();
-            navigate("/dashboard");
-        } catch (err) {
-            setError(err.message.replace("Firebase: ", ""));
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const navigate = useNavigate();
 
     const handleGoogleSignup = async () => {
         try {
@@ -188,17 +169,9 @@ export default function Signup() {
                     <div style={{ flex: 1, height: 1, background: "#ece8e4" }} />
                 </div>
 
-<<<<<<< HEAD
-                <button className="gbtn" onClick={handleGoogleSignup} style={{
-                    width: "100%", padding: 11, background: "transparent",
-                    border: "1.5px solid #e8e4e0", borderRadius: 9, cursor: "pointer",
-                    display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
-                    fontSize: 13, color: "#555", transition: "border-color 0.2s", marginBottom: 28,
-                }}>
-=======
                 <button
                     className="gbtn"
-                    onClick={handleGoogle}
+                    onClick={handleGoogleSignup}
                     disabled={loading}
                     style={{
                         width: "100%", padding: 11, background: "transparent",
@@ -207,7 +180,6 @@ export default function Signup() {
                         fontSize: 13, color: "#555", transition: "border-color 0.2s", marginBottom: 28,
                     }}
                 >
->>>>>>> main
                     <svg width="17" height="17" viewBox="0 0 18 18" fill="none">
                         <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908C16.658 14.013 17.64 11.706 17.64 9.2z" fill="#4285F4"/>
                         <path d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 009 18z" fill="#34A853"/>

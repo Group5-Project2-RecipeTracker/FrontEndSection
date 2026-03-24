@@ -1,37 +1,7 @@
 import { useState } from "react";
-<<<<<<< HEAD
 import { signInWithPopup } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
 import { auth, provider } from "../firebase";
-
-export default function Login() {
-    const [showPass, setShowPass] = useState(false);
-    const navigate = useNavigate();
-
-    const handleGoogleLogin = async () => {
-        try {
-            const result = await signInWithPopup(auth, provider);
-            const token = await result.user.getIdToken();
-
-            const res = await fetch("http://localhost:8080/api/profile", {
-                method: "GET",
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
-            });
-
-            if (!res.ok) {
-                throw new Error("Backend authentication failed");
-            }
-
-            const data = await res.text();
-            console.log(data);
-
-            navigate("/dashboard");
-        } catch (err) {
-            console.error("Google login failed:", err);
-=======
-import { useNavigate } from "react-router-dom";
 import { signIn, signInWithGoogle } from "../services/authService";
 
 export default function Login() {
@@ -58,18 +28,28 @@ export default function Login() {
             setLoading(false);
         }
     };
-
-    const handleGoogle = async () => {
-        setError("");
-        setLoading(true);
+    const handleGoogleLogin = async () => {
         try {
-            await signInWithGoogle();
+            const result = await signInWithPopup(auth, provider);
+            const token = await result.user.getIdToken();
+
+            const res = await fetch("http://localhost:8080/api/profile", {
+                method: "GET",
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+
+            if (!res.ok) {
+                throw new Error("Backend authentication failed");
+            }
+
+            const data = await res.text();
+            console.log(data);
+
             navigate("/dashboard");
         } catch (err) {
-            setError(err.message.replace("Firebase: ", ""));
-        } finally {
-            setLoading(false);
->>>>>>> main
+            console.error("Google login failed:", err);
         }
     };
 
@@ -159,17 +139,10 @@ export default function Login() {
                     <div style={{ flex: 1, height: 1, background: "#ece8e4" }} />
                 </div>
 
-<<<<<<< HEAD
-                <button className="gbtn" onClick={handleGoogleLogin} style={{
-                    width: "100%", padding: 11, background: "transparent",
-                    border: "1.5px solid #e8e4e0", borderRadius: 9, cursor: "pointer",
-                    display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
-                    fontSize: 13, color: "#555", transition: "border-color 0.2s", marginBottom: 28,
-                }}>
-=======
+
                 <button
                     className="gbtn"
-                    onClick={handleGoogle}
+                    onClick={handleGoogleLogin}
                     disabled={loading}
                     style={{
                         width: "100%", padding: 11, background: "transparent",
@@ -178,7 +151,7 @@ export default function Login() {
                         fontSize: 13, color: "#555", transition: "border-color 0.2s", marginBottom: 28,
                     }}
                 >
->>>>>>> main
+
                     <svg width="17" height="17" viewBox="0 0 18 18" fill="none">
                         <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908C16.658 14.013 17.64 11.706 17.64 9.2z" fill="#4285F4"/>
                         <path d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 009 18z" fill="#34A853"/>
