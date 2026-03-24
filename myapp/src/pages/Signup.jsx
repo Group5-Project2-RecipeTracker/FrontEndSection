@@ -1,7 +1,32 @@
 import { useState } from "react";
+import { signInWithPopup } from "firebase/auth";
+import { auth, provider } from "../firebase";
+import { useNavigate } from "react-router-dom";
 
 export default function Signup() {
     const [showPass, setShowPass] = useState(false);
+
+    const navigate = useNavigate();
+
+    const handleGoogleSignup = async () => {
+        try {
+            const result = await signInWithPopup(auth, provider);
+            const token = await result.user.getIdToken();
+
+            const res = await fetch("http://localhost:8080/api/profile", {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+
+            if (!res.ok) throw new Error("Backend auth failed");
+
+            navigate("/dashboard");
+
+        } catch (err) {
+            console.error("Signup failed:", err);
+        }
+    };
 
     return (
         <div style={{
@@ -84,7 +109,7 @@ export default function Signup() {
                     <div style={{ flex: 1, height: 1, background: "#ece8e4" }} />
                 </div>
 
-                <button className="gbtn" style={{
+                <button className="gbtn" onClick={handleGoogleSignup} style={{
                     width: "100%", padding: 11, background: "transparent",
                     border: "1.5px solid #e8e4e0", borderRadius: 9, cursor: "pointer",
                     display: "flex", alignItems: "center", justifyContent: "center", gap: 10,

@@ -4,7 +4,8 @@ import { useNavigate } from "react-router-dom";
 import { auth, provider } from "../firebase";
 
 export default function Login() {
-    const[showPass, setShowPass] = useState(false);
+    const [showPass, setShowPass] = useState(false);
+    const navigate = useNavigate();
 
     const handleGoogleLogin = async () => {
         try {
