@@ -1,7 +1,45 @@
 import { useEffect, useMemo, useState } from "react";
 import { api } from "../lib/api.jsx";
+import { auth } from "../firebase";
+import { updateProfile } from "firebase/auth";
 
-export default function App() {
+export default function Dashboard() {
+    const [profile, setProfile] = useState({ name: "", email: "", goal: "" });
+    const [profileSaving, setProfileSaving] = useState(false);
+    const [profileMsg, setProfileMsg] = useState("");
+    const [profileError, setProfileError] = useState("");
+
+
+
+    useEffect(() => {
+        const user = auth.currentUser;
+        if (user) {
+            setProfile({
+                name: user.displayName || "",
+                email: user.email || "",
+                goal: localStorage.getItem("userGoal") || ""
+            });
+        }
+    }, []);
+
+    async function saveProfile() {
+        setProfileSaving(true);
+        setProfileMsg("");
+        setProfileError("");
+        try {
+            const user = auth.currentUser;
+            if (!user) throw new Error("Not logged in.");
+            await updateProfile(user, { displayName: profile.name });
+            localStorage.setItem("userGoal", profile.goal);
+            setProfileMsg("Profile saved successfully!");
+        } catch (err) {
+            setProfileError("Failed to save: " + err.message);
+        } finally {
+            setProfileSaving(false);
+        }
+    }
+
+
     const [page, setPage] = useState("dashboard");
     const [date, setDate] = useState("");
     const [showForm, setShowForm] = useState(false);
@@ -22,12 +60,6 @@ export default function App() {
         protein: "",
         carbs: "",
         fats: ""
-    });
-
-    const [profile, setProfile] = useState({
-        name: "",
-        email: "",
-        goal: ""
     });
 
     const [foods, setFoods] = useState([]);
@@ -404,22 +436,69 @@ export default function App() {
                     <h2 style={{ margin: "0 0 4px" }}>Profile</h2>
                     <p style={{ margin: "0 0 20px", fontSize: 13, color: "#999" }}>Manage your account</p>
 
+                    {profileMsg && (
+                        <div style={{ background: "#f3fff3", border: "1px solid #bdddbd", color: "#1e5d1e", padding: 12, borderRadius: 8, marginBottom: 16, fontSize: 13 }}>
+                            {profileMsg}
+                        </div>
+                    )}
+                    {profileError && (
+                        <div style={{ background: "#fff4f4", border: "1px solid #e5bcbc", color: "#8a1f1f", padding: 12, borderRadius: 8, marginBottom: 16, fontSize: 13 }}>
+                            {profileError}
+                        </div>
+                    )}
+
                     <div style={{ background: "white", border: "1px solid #eee", borderRadius: 10, padding: 20, marginBottom: 16 }}>
                         <p style={{ margin: "0 0 12px", fontSize: 12, color: "#999", textTransform: "uppercase" }}>Account Info</p>
+
                         <label style={{ fontSize: 13, fontWeight: "bold" }}>Email</label>
-                        <input type="email" placeholder="you@email.com" value={profile.email} onChange={e => setProfile({ ...profile, email: e.target.value })} style={inputStyle} />
+                        <input
+                            type="email"
+                            placeholder="you@email.com"
+                            value={profile.email}
+                            disabled
+                            style={{ ...inputStyle, color: "#999", background: "#f9f9f9", cursor: "not-allowed" }}
+                        />
+                        <p style={{ fontSize: 11, color: "#bbb", marginTop: -6, marginBottom: 12 }}>Email cannot be changed here.</p>
+
                         <label style={{ fontSize: 13, fontWeight: "bold" }}>Full Name</label>
-                        <input placeholder="Your name" value={profile.name} onChange={e => setProfile({ ...profile, name: e.target.value })} style={inputStyle} />
+                        <input
+                            placeholder="Your name"
+                            value={profile.name}
+                            onChange={e => setProfile({ ...profile, name: e.target.value })}
+                            style={inputStyle}
+                        />
+
                         <label style={{ fontSize: 13, fontWeight: "bold" }}>Goal</label>
-                        <select value={profile.goal} onChange={e => setProfile({ ...profile, goal: e.target.value })} style={inputStyle}>
+                        <select
+                            value={profile.goal}
+                            onChange={e => setProfile({ ...profile, goal: e.target.value })}
+                            style={inputStyle}
+                        >
                             <option value="">Select a goal</option>
                             <option value="lose">Lose Weight</option>
                             <option value="maintain">Maintain Weight</option>
                             <option value="gain">Gain Muscle</option>
                         </select>
+
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 4 }}>
-                            <button onClick={() => alert("Saved!")} style={{ background: "#333", color: "white", border: "none", borderRadius: 6, padding: "8px 16px", fontSize: 13, cursor: "pointer" }}>Save Changes</button>
-                            <button onClick={() => alert("Delete account coming soon.")} style={{ background: "none", border: "1px solid #ddd", color: "#999", borderRadius: 6, padding: "8px 16px", fontSize: 13, cursor: "pointer" }}>Delete Account</button>
+                            <button
+                                onClick={saveProfile}
+                                disabled={profileSaving}
+                                style={{
+                                    background: profileSaving ? "#888" : "#333",
+                                    color: "white", border: "none", borderRadius: 6,
+                                    padding: "8px 16px", fontSize: 13,
+                                    cursor: profileSaving ? "not-allowed" : "pointer"
+                                }}
+                            >
+                                {profileSaving ? "Saving..." : "Save Changes"}
+                            </button>
+                            <button
+                                onClick={() => alert("Delete account coming soon.")}
+                                style={{ background: "none", border: "1px solid #ddd", color: "#999", borderRadius: 6, padding: "8px 16px", fontSize: 13, cursor: "pointer" }}
+                            >
+                                Delete Account
+                            </button>
                         </div>
                     </div>
 
