@@ -32,24 +32,41 @@ export default function Signup() {
     };
 
     const handleGoogleSignup = async () => {
-        try {
-            const result = await signInWithPopup(auth, provider);
-            const token = await result.user.getIdToken();
+    try {
+        // 1. Open Google login popup (Firebase handles login OR account creation)
+        const result = await signInWithPopup(auth, provider);
 
-            const res = await fetch("http://localhost:8080/api/profile", {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
-            });
+        // 2. Get the Firebase ID token (this proves user identity to backend)
+        const token = await result.user.getIdToken();
 
-            if (!res.ok) throw new Error("Backend auth failed");
+        // 3. Store token locally so future API requests can include it
+        localStorage.setItem("token", token);
 
-            navigate("/dashboard");
+        // 4. Send token to Spring Boot backend
+        //    Backend will verify it using Firebase Admin SDK
+        const res = await fetch("http://localhost:8080/api/users/profile", {
+            method: "GET",
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
+        });
 
-        } catch (err) {
-            console.error("Signup failed:", err);
+        // 5. If backend rejects the token, authentication failed
+        if (!res.ok) {
+            throw new Error("Backend authentication failed");
         }
-    };
+
+        // 6. Backend returns user info (from your UserController)
+        const data = await res.json();
+        console.log("User profile:", data);
+
+        // 7. Redirect to dashboard after successful signup/login
+        navigate("/dashboard");
+
+    } catch (err) {
+        console.error("Google signup failed:", err);
+    }
+};
 
     return (
         <div style={{

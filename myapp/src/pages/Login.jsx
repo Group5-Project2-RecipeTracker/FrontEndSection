@@ -28,30 +28,42 @@ export default function Login() {
             setLoading(false);
         }
     };
+    
     const handleGoogleLogin = async () => {
-        try {
-            const result = await signInWithPopup(auth, provider);
-            const token = await result.user.getIdToken();
+    try {
+        // 1. Open Google login popup
+        const result = await signInWithPopup(auth, provider);
 
-            const res = await fetch("http://localhost:8080/api/profile", {
-                method: "GET",
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
-            });
+        // 2. Get Firebase ID token
+        const token = await result.user.getIdToken();
 
-            if (!res.ok) {
-                throw new Error("Backend authentication failed");
-            }
+        // 3. Save token for future authenticated requests
+        localStorage.setItem("token", token);
 
-            const data = await res.text();
-            console.log(data);
+        // 4. Call backend to verify token + get user info
+        const res = await fetch("http://localhost:8080/api/users/profile", {
+            method: "GET",
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
+        });
 
-            navigate("/dashboard");
-        } catch (err) {
-            console.error("Google login failed:", err);
+        // 5. Handle backend failure
+        if (!res.ok) {
+            throw new Error("Backend authentication failed");
         }
-    };
+
+        // 6. Read user data returned from backend
+        const data = await res.json();
+        console.log("User profile:", data);
+
+        // 7. Redirect to dashboard
+        navigate("/dashboard");
+
+    } catch (err) {
+        console.error("Google login failed:", err);
+    }
+};
 
     return (
         <div style={{minHeight: '100vh', display: 'flex', alignItems: 'center',
