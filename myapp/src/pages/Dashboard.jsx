@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { onAuthStateChanged } from "firebase/auth";
+import { onAuthStateChanged, updateProfile } from "firebase/auth";
 import { api } from "../lib/api.jsx";
 import { auth } from "../firebase";
 import "../styles/Dashboard.css";
@@ -11,6 +11,16 @@ export default function Dashboard() {
     const [isAdmin, setIsAdmin] = useState(
         auth.currentUser?.email === "admin@email.com"
     );
+
+    const [profile, setProfile] = useState({
+        name: "",
+        email: "",
+        goal: "",
+    });
+    const [profileSaving, setProfileSaving] = useState(false);
+    const [profileMsg, setProfileMsg] = useState("");
+    const [profileError, setProfileError] = useState("");
+
     const [page, setPage] = useState("dashboard");
     const [date, setDate] = useState("");
     const [showForm, setShowForm] = useState(false);
@@ -33,12 +43,6 @@ export default function Dashboard() {
         fats: "",
     });
 
-    const [profile, setProfile] = useState({
-        name: "",
-        email: "",
-        goal: "",
-    });
-
     const [foods, setFoods] = useState([]);
     const [recipes, setRecipes] = useState([]);
     const [loadingFoods, setLoadingFoods] = useState(true);
@@ -47,6 +51,15 @@ export default function Dashboard() {
 
     useEffect(() => {
         let mounted = true;
+
+        const currentUser = auth.currentUser;
+        if (currentUser && mounted) {
+            setProfile({
+                name: currentUser.displayName || "",
+                email: currentUser.email || "",
+                goal: localStorage.getItem("userGoal") || "",
+            });
+        }
 
         api
             .getFoods()
@@ -87,6 +100,11 @@ export default function Dashboard() {
         const unsubscribe = onAuthStateChanged(auth, (user) => {
             if (mounted) {
                 setIsAdmin(user?.email === "admin@email.com");
+                setProfile({
+                    name: user?.displayName || "",
+                    email: user?.email || "",
+                    goal: localStorage.getItem("userGoal") || "",
+                });
             }
         });
 
@@ -95,6 +113,26 @@ export default function Dashboard() {
             unsubscribe();
         };
     }, []);
+
+    async function saveProfile() {
+        setProfileSaving(true);
+        setProfileMsg("");
+        setProfileError("");
+
+        try {
+            const user = auth.currentUser;
+            if (!user) throw new Error("Not logged in.");
+
+            await updateProfile(user, { displayName: profile.name });
+            localStorage.setItem("userGoal", profile.goal);
+
+            setProfileMsg("Profile saved successfully!");
+        } catch (err) {
+            setProfileError("Failed to save: " + err.message);
+        } finally {
+            setProfileSaving(false);
+        }
+    }
 
     function addCatalogFood(food, meal) {
         const targetMeal = meal || selectedMeal;
@@ -211,8 +249,8 @@ export default function Dashboard() {
         if (totalCal < 1000) {
             recs.push(
                 "You're under your calorie goal. Try something like " +
-                random(balancedMeals) +
-                "."
+                    random(balancedMeals) +
+                    "."
             );
         }
 
@@ -250,7 +288,9 @@ export default function Dashboard() {
                         onClick={() => setPage(p)}
                         className={`dashboard-nav-button ${page === p ? "active" : ""}`}
                     >
-                        {p === "catalog" ? "Food Catalog" : p.charAt(0).toUpperCase() + p.slice(1)}
+                        {p === "catalog"
+                            ? "Food Catalog"
+                            : p.charAt(0).toUpperCase() + p.slice(1)}
                     </button>
                 ))}
             </div>
@@ -301,7 +341,9 @@ export default function Dashboard() {
                                     placeholder="Calories *"
                                     type="number"
                                     value={form.calories}
-                                    onChange={(e) => setForm({ ...form, calories: e.target.value })}
+                                    onChange={(e) =>
+                                        setForm({ ...form, calories: e.target.value })
+                                    }
                                     className="dashboard-form-control"
                                 />
 
@@ -309,7 +351,9 @@ export default function Dashboard() {
                                     placeholder="Protein (g)"
                                     type="number"
                                     value={form.protein}
-                                    onChange={(e) => setForm({ ...form, protein: e.target.value })}
+                                    onChange={(e) =>
+                                        setForm({ ...form, protein: e.target.value })
+                                    }
                                     className="dashboard-form-control"
                                 />
 
@@ -330,7 +374,10 @@ export default function Dashboard() {
                                 />
 
                                 <div className="dashboard-form-actions">
-                                    <button onClick={saveFood} className="dashboard-btn dashboard-btn-primary dashboard-btn-flex">
+                                    <button
+                                        onClick={saveFood}
+                                        className="dashboard-btn dashboard-btn-primary dashboard-btn-flex"
+                                    >
                                         Save
                                     </button>
                                     <button
@@ -348,8 +395,8 @@ export default function Dashboard() {
                                 <div className="dashboard-meal-card-header">
                                     <b className="dashboard-meal-name">{meal}</b>
                                     <span className="dashboard-meal-calories">
-                    {meals[meal].reduce((a, b) => a + b.cal, 0)} kcal
-                  </span>
+                                        {meals[meal].reduce((a, b) => a + b.cal, 0)} kcal
+                                    </span>
                                 </div>
 
                                 {meals[meal].length === 0 && (
@@ -360,14 +407,14 @@ export default function Dashboard() {
                                     <div key={i} className="dashboard-meal-item">
                                         <span>{f.name}</span>
                                         <span className="dashboard-meal-item-calories">
-                      {f.cal} cal
-                      <button
-                          onClick={() => removeFood(meal, i)}
-                          className="dashboard-meal-remove-button"
-                      >
-                        ×
-                      </button>
-                    </span>
+                                            {f.cal} cal
+                                            <button
+                                                onClick={() => removeFood(meal, i)}
+                                                className="dashboard-meal-remove-button"
+                                            >
+                                                ×
+                                            </button>
+                                        </span>
                                     </div>
                                 ))}
                             </div>
@@ -378,7 +425,9 @@ export default function Dashboard() {
                         <div className="dashboard-overview-header">
                             <div>
                                 <h2 className="dashboard-overview-title">Today's Overview</h2>
-                                <p className="dashboard-overview-date">{date || "No date selected"}</p>
+                                <p className="dashboard-overview-date">
+                                    {date || "No date selected"}
+                                </p>
                             </div>
 
                             {isAdmin && (
@@ -403,12 +452,19 @@ export default function Dashboard() {
                                     <p className="dashboard-stat-label">{label}</p>
                                     <p className="dashboard-stat-value">
                                         {value}
-                                        {unit} <span className="dashboard-stat-goal">/ {goal}{unit}</span>
+                                        {unit}{" "}
+                                        <span className="dashboard-stat-goal">
+                                            / {goal}
+                                            {unit}
+                                        </span>
                                     </p>
                                     <div className="dashboard-progress-bar">
                                         <div
                                             className="dashboard-progress-fill"
-                                            style={{ width: Math.min((value / goal) * 100, 100) + "%" }}
+                                            style={{
+                                                width:
+                                                    Math.min((value / goal) * 100, 100) + "%",
+                                            }}
                                         />
                                     </div>
                                 </div>
@@ -434,14 +490,20 @@ export default function Dashboard() {
 
                                     return (
                                         <div key={meal} className="dashboard-breakdown-section">
-                                            <p className="dashboard-breakdown-meal-title">{meal}</p>
+                                            <p className="dashboard-breakdown-meal-title">
+                                                {meal}
+                                            </p>
 
                                             {meals[meal].map((f, i) => (
-                                                <div key={i} className="dashboard-breakdown-item">
+                                                <div
+                                                    key={i}
+                                                    className="dashboard-breakdown-item"
+                                                >
                                                     <span>{f.name}</span>
                                                     <span>
-                            {f.cal} cal · P {f.protein}g · C {f.carbs}g · F {f.fats}g
-                          </span>
+                                                        {f.cal} cal · P {f.protein}g · C {f.carbs}g
+                                                        · F {f.fats}g
+                                                    </span>
                                                 </div>
                                             ))}
                                         </div>
@@ -452,8 +514,12 @@ export default function Dashboard() {
                     </div>
 
                     <div className="dashboard-sidebar right">
-                        <h2 className="dashboard-sidebar-title dashboard-sidebar-title-margin">Recommendations</h2>
-                        <p className="dashboard-sidebar-subtitle">Based on what you've logged</p>
+                        <h2 className="dashboard-sidebar-title dashboard-sidebar-title-margin">
+                            Recommendations
+                        </h2>
+                        <p className="dashboard-sidebar-subtitle">
+                            Based on what you've logged
+                        </p>
 
                         {allFoods.length === 0 && (
                             <p className="dashboard-recommendation-empty">
@@ -482,7 +548,9 @@ export default function Dashboard() {
             {page === "catalog" && (
                 <div className="dashboard-page-container dashboard-page-container-wide">
                     <h2 className="dashboard-page-title">Food Catalog</h2>
-                    <p className="dashboard-page-subtitle">Browse foods and add them to your log</p>
+                    <p className="dashboard-page-subtitle">
+                        Browse foods and add them to your log
+                    </p>
 
                     <div className="dashboard-catalog-toolbar">
                         <input
@@ -510,19 +578,26 @@ export default function Dashboard() {
                     {loadingFoods ? (
                         <p className="dashboard-status-text">Loading foods...</p>
                     ) : filteredFoods.length === 0 ? (
-                        <p className="dashboard-status-text dashboard-status-text-empty">No matching foods found.</p>
+                        <p className="dashboard-status-text dashboard-status-text-empty">
+                            No matching foods found.
+                        </p>
                     ) : (
                         <div className="dashboard-list-grid">
                             {filteredFoods.map((food) => (
-                                <div key={food.id || food.name} className="dashboard-list-card">
+                                <div
+                                    key={food.id || food.name}
+                                    className="dashboard-list-card"
+                                >
                                     <div>
                                         <p className="dashboard-list-card-title">{food.name}</p>
                                         <p className="dashboard-list-card-category">
                                             {food.category || "Uncategorized"}
                                         </p>
                                         <p className="dashboard-list-card-meta">
-                                            {food.calories || food.cal || 0} cal · P {food.protein || food.protein_g || 0}g · C{" "}
-                                            {food.carbs || food.carbs_g || 0}g · F {food.fat || food.fat_g || food.fats || 0}g
+                                            {food.calories || food.cal || 0} cal · P{" "}
+                                            {food.protein || food.protein_g || 0}g · C{" "}
+                                            {food.carbs || food.carbs_g || 0}g · F{" "}
+                                            {food.fat || food.fat_g || food.fats || 0}g
                                         </p>
                                     </div>
 
@@ -547,17 +622,26 @@ export default function Dashboard() {
                     {loadingRecipes ? (
                         <p className="dashboard-status-text">Loading recipes...</p>
                     ) : recipes.length === 0 ? (
-                        <p className="dashboard-status-text dashboard-status-text-empty">No recipes found.</p>
+                        <p className="dashboard-status-text dashboard-status-text-empty">
+                            No recipes found.
+                        </p>
                     ) : (
                         <div className="dashboard-list-grid">
                             {recipes.map((recipe) => (
-                                <div key={recipe.id || recipe.name} className="dashboard-recipe-card">
+                                <div
+                                    key={recipe.id || recipe.name}
+                                    className="dashboard-recipe-card"
+                                >
                                     <p className="dashboard-list-card-title">{recipe.name}</p>
-                                    <p className="dashboard-list-card-category">{recipe.category}</p>
-                                    <p className="dashboard-recipe-description">{recipe.description}</p>
+                                    <p className="dashboard-list-card-category">
+                                        {recipe.category}
+                                    </p>
+                                    <p className="dashboard-recipe-description">
+                                        {recipe.description}
+                                    </p>
                                     <p className="dashboard-list-card-meta">
-                                        {recipe.calories} cal · P {recipe.protein}g · C {recipe.carbs}g · F{" "}
-                                        {recipe.fat || recipe.fats}g
+                                        {recipe.calories} cal · P {recipe.protein}g · C{" "}
+                                        {recipe.carbs}g · F {recipe.fat || recipe.fats}g
                                     </p>
                                 </div>
                             ))}
@@ -571,6 +655,13 @@ export default function Dashboard() {
                     <h2 className="dashboard-page-title">Profile</h2>
                     <p className="dashboard-page-subtitle">Manage your account</p>
 
+                    {profileMsg && (
+                        <div className="dashboard-success-banner">{profileMsg}</div>
+                    )}
+                    {profileError && (
+                        <div className="dashboard-error-banner">{profileError}</div>
+                    )}
+
                     <div className="dashboard-profile-card">
                         <p className="dashboard-profile-section-label">Account Info</p>
 
@@ -579,22 +670,29 @@ export default function Dashboard() {
                             type="email"
                             placeholder="you@email.com"
                             value={profile.email}
-                            onChange={(e) => setProfile({ ...profile, email: e.target.value })}
+                            disabled
                             className="dashboard-form-control"
                         />
+                        <p className="dashboard-page-subtitle">
+                            Email cannot be changed here.
+                        </p>
 
                         <label className="dashboard-profile-label">Full Name</label>
                         <input
                             placeholder="Your name"
                             value={profile.name}
-                            onChange={(e) => setProfile({ ...profile, name: e.target.value })}
+                            onChange={(e) =>
+                                setProfile({ ...profile, name: e.target.value })
+                            }
                             className="dashboard-form-control"
                         />
 
                         <label className="dashboard-profile-label">Goal</label>
                         <select
                             value={profile.goal}
-                            onChange={(e) => setProfile({ ...profile, goal: e.target.value })}
+                            onChange={(e) =>
+                                setProfile({ ...profile, goal: e.target.value })
+                            }
                             className="dashboard-form-control"
                         >
                             <option value="">Select a goal</option>
@@ -605,10 +703,11 @@ export default function Dashboard() {
 
                         <div className="dashboard-profile-actions">
                             <button
-                                onClick={() => alert("Saved!")}
+                                onClick={saveProfile}
+                                disabled={profileSaving}
                                 className="dashboard-btn dashboard-btn-primary"
                             >
-                                Save Changes
+                                {profileSaving ? "Saving..." : "Save Changes"}
                             </button>
                             <button
                                 onClick={() => alert("Delete account coming soon.")}
@@ -630,11 +729,15 @@ export default function Dashboard() {
                                 {
                                     label: "Goal",
                                     value: profile.goal
-                                        ? profile.goal.charAt(0).toUpperCase() + profile.goal.slice(1)
+                                        ? profile.goal.charAt(0).toUpperCase() +
+                                          profile.goal.slice(1)
                                         : "Not set",
                                 },
                             ].map(({ label, value }) => (
-                                <div key={label} className="dashboard-account-stat-card">
+                                <div
+                                    key={label}
+                                    className="dashboard-account-stat-card"
+                                >
                                     <p className="dashboard-account-stat-label">{label}</p>
                                     <p className="dashboard-account-stat-value">{value}</p>
                                 </div>
