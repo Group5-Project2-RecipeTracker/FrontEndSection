@@ -1,0 +1,485 @@
+.dashboard-shell {
+    font-family: Arial, sans-serif;
+    background: #f5f5f5;
+    min-height: 100vh;
+}
+
+.dashboard-nav {
+    background: white;
+    border-bottom: 1px solid #ddd;
+    display: flex;
+    align-items: center;
+    padding: 0 20px;
+    height: 52px;
+}
+
+.dashboard-nav-button {
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    cursor: pointer;
+    font-size: 14px;
+    padding: 0 12px;
+    height: 52px;
+    color: #888;
+    text-transform: capitalize;
+}
+
+.dashboard-nav-button.active {
+    border-bottom: 2px solid #333;
+    color: #111;
+}
+
+.dashboard-error-banner {
+    background: #fff4f4;
+    border: 1px solid #e5bcbc;
+    color: #8a1f1f;
+    padding: 12px;
+    margin: 16px;
+    border-radius: 8px;
+}
+
+.dashboard-layout {
+    display: flex;
+    height: calc(100vh - 52px);
+}
+
+.dashboard-sidebar {
+    width: 280px;
+    background: white;
+    padding: 18px;
+    overflow-y: auto;
+}
+
+.dashboard-sidebar.left {
+    border-right: 1px solid #ddd;
+}
+
+.dashboard-sidebar.right {
+    border-left: 1px solid #ddd;
+}
+
+.dashboard-main {
+    flex: 1;
+    padding: 24px;
+    overflow-y: auto;
+}
+
+.dashboard-sidebar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 14px;
+}
+
+.dashboard-sidebar-title {
+    margin: 0;
+    font-size: 16px;
+}
+
+.dashboard-sidebar-title-margin {
+    margin: 0 0 4px;
+}
+
+.dashboard-sidebar-subtitle {
+    margin: 0 0 16px;
+    font-size: 12px;
+    color: #999;
+}
+
+.dashboard-form-control {
+    display: block;
+    width: 100%;
+    padding: 8px 10px;
+    margin-bottom: 10px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 13px;
+    box-sizing: border-box;
+}
+
+.dashboard-date-input {
+    margin-bottom: 14px;
+}
+
+.dashboard-food-form-card {
+    background: #f9f9f9;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 14px;
+    margin-bottom: 14px;
+}
+
+.dashboard-form-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.dashboard-btn {
+    border: none;
+    border-radius: 6px;
+    padding: 8px 16px;
+    cursor: pointer;
+    font-size: 13px;
+}
+
+.dashboard-btn-small {
+    padding: 6px 12px;
+    font-size: 12px;
+}
+
+.dashboard-btn-flex {
+    flex: 1;
+}
+
+.dashboard-btn-primary {
+    background: #333;
+    color: white;
+}
+
+.dashboard-btn-secondary {
+    background: #eee;
+    color: #111;
+}
+
+.dashboard-btn-outline {
+    background: none;
+    border: 1px solid #ddd;
+    color: #999;
+}
+
+.dashboard-meal-card {
+    background: #f9f9f9;
+    border: 1px solid #eee;
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 10px;
+}
+
+.dashboard-meal-card-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 6px;
+}
+
+.dashboard-meal-name {
+    font-size: 13px;
+    text-transform: capitalize;
+}
+
+.dashboard-meal-calories {
+    font-size: 12px;
+    color: #999;
+}
+
+.dashboard-meal-empty {
+    font-size: 12px;
+    color: #ccc;
+    margin: 0;
+    text-align: center;
+}
+
+.dashboard-meal-item {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    border-top: 1px solid #eee;
+    padding: 4px 0;
+}
+
+.dashboard-meal-item-calories {
+    color: #999;
+}
+
+.dashboard-meal-remove-button {
+    background: none;
+    border: none;
+    color: #bbb;
+    cursor: pointer;
+    margin-left: 4px;
+}
+
+.dashboard-overview-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.dashboard-overview-title {
+    margin: 0 0 4px;
+}
+
+.dashboard-overview-date {
+    margin: 0;
+    font-size: 13px;
+    color: #999;
+}
+
+.dashboard-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.dashboard-stat-card {
+    background: white;
+    border: 1px solid #eee;
+    border-radius: 10px;
+    padding: 14px;
+}
+
+.dashboard-stat-label {
+    margin: 0 0 4px;
+    font-size: 11px;
+    color: #999;
+}
+
+.dashboard-stat-value {
+    margin: 0 0 8px;
+    font-size: 20px;
+    font-weight: bold;
+}
+
+.dashboard-stat-goal {
+    font-size: 13px;
+    color: #aaa;
+    font-weight: normal;
+}
+
+.dashboard-progress-bar {
+    height: 4px;
+    background: #eee;
+    border-radius: 99px;
+}
+
+.dashboard-progress-fill {
+    height: 100%;
+    background: #555;
+    border-radius: 99px;
+}
+
+.dashboard-empty-state-card {
+    background: white;
+    border: 1px solid #eee;
+    border-radius: 10px;
+    padding: 40px;
+    text-align: center;
+}
+
+.dashboard-empty-state-text {
+    color: #bbb;
+    margin-bottom: 12px;
+}
+
+.dashboard-breakdown-card {
+    background: white;
+    border: 1px solid #eee;
+    border-radius: 10px;
+    padding: 20px;
+}
+
+.dashboard-breakdown-title {
+    margin: 0 0 14px;
+    font-size: 14px;
+}
+
+.dashboard-breakdown-section {
+    margin-bottom: 12px;
+}
+
+.dashboard-breakdown-meal-title {
+    margin: 0 0 4px;
+    font-weight: bold;
+    font-size: 13px;
+    text-transform: capitalize;
+}
+
+.dashboard-breakdown-item {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: #555;
+    padding: 2px 0;
+}
+
+.dashboard-recommendation-empty {
+    color: #bbb;
+    font-size: 13px;
+    text-align: center;
+    margin-top: 40px;
+}
+
+.dashboard-recommendation-card {
+    background: #f5f5f5;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 8px;
+}
+
+.dashboard-recommendation-text {
+    margin: 0;
+    font-size: 12px;
+    color: #444;
+    line-height: 1.5;
+}
+
+.dashboard-page-container {
+    margin: 0 auto;
+    padding: 24px;
+}
+
+.dashboard-page-container-wide {
+    max-width: 880px;
+}
+
+.dashboard-page-container-narrow {
+    max-width: 460px;
+}
+
+.dashboard-page-title {
+    margin: 0 0 4px;
+}
+
+.dashboard-page-subtitle {
+    margin: 0 0 20px;
+    font-size: 13px;
+    color: #999;
+}
+
+.dashboard-catalog-toolbar {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 20px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.dashboard-catalog-toolbar-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.dashboard-toolbar-label {
+    font-size: 13px;
+}
+
+.dashboard-search-input {
+    max-width: 300px;
+    margin-bottom: 0;
+}
+
+.dashboard-meal-select {
+    padding: 8px 10px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 13px;
+}
+
+.dashboard-status-text {
+    color: #999;
+}
+
+.dashboard-status-text-empty {
+    color: #bbb;
+    font-size: 13px;
+}
+
+.dashboard-list-grid {
+    display: grid;
+    gap: 12px;
+}
+
+.dashboard-list-card,
+.dashboard-recipe-card {
+    background: white;
+    border: 1px solid #eee;
+    border-radius: 10px;
+    padding: 16px;
+}
+
+.dashboard-list-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.dashboard-list-card-title {
+    margin: 0 0 4px;
+    font-weight: bold;
+    font-size: 14px;
+}
+
+.dashboard-list-card-category {
+    margin: 0 0 4px;
+    font-size: 12px;
+    color: #888;
+}
+
+.dashboard-list-card-meta {
+    margin: 0;
+    font-size: 12px;
+    color: #555;
+}
+
+.dashboard-recipe-description {
+    margin: 0 0 8px;
+    font-size: 13px;
+    color: #555;
+}
+
+.dashboard-profile-card {
+    background: white;
+    border: 1px solid #eee;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 16px;
+}
+
+.dashboard-profile-section-label {
+    margin: 0 0 12px;
+    font-size: 12px;
+    color: #999;
+    text-transform: uppercase;
+}
+
+.dashboard-profile-label {
+    font-size: 13px;
+    font-weight: bold;
+}
+
+.dashboard-profile-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 4px;
+}
+
+.dashboard-account-stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.dashboard-account-stat-card {
+    background: #f9f9f9;
+    border-radius: 8px;
+    padding: 14px;
+}
+
+.dashboard-account-stat-label {
+    margin: 0 0 4px;
+    font-size: 11px;
+    color: #999;
+}
+
+.dashboard-account-stat-value {
+    margin: 0;
+    font-size: 18px;
+    font-weight: bold;
+}

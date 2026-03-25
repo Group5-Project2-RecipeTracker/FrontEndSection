@@ -1,0 +1,190 @@
+@import url("https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400&family=Lato:wght@300;400;500&display=swap");
+
+.signup-page {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #fde8e0 0%, #e8f0fe 50%, #ede0f7 100%);
+    font-family: "Lato", sans-serif;
+}
+
+.signup-card {
+    background: rgba(255, 255, 255, 0.75);
+    backdrop-filter: blur(16px);
+    border-radius: 20px;
+    padding: 50px 44px;
+    width: 360px;
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.07);
+    border: 1px solid rgba(255, 255, 255, 0.9);
+}
+
+.signup-title {
+    font-family: "Cormorant Garamond", serif;
+    font-size: 28px;
+    font-weight: 400;
+    color: #1c1c1c;
+    margin-bottom: 6px;
+}
+
+.signup-subtitle {
+    font-size: 13px;
+    color: #b0aba6;
+    font-weight: 300;
+    margin-bottom: 32px;
+}
+
+.signup-error {
+    font-size: 12px;
+    color: #dc2626;
+    margin-bottom: 16px;
+    background: #fff5f5;
+    padding: 8px 12px;
+    border-radius: 6px;
+}
+
+.signup-name-row {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 22px;
+}
+
+.signup-name-group {
+    flex: 1;
+}
+
+.signup-label {
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    color: #aaa;
+}
+
+.signup-label-block {
+    display: block;
+    margin-bottom: 8px;
+}
+
+.signup-input {
+    display: block;
+    width: 100%;
+    background: none;
+    border: none;
+    border-bottom: 1.5px solid #e8e4e0;
+    padding: 8px 0;
+    font-size: 14px;
+    color: #1c1c1c;
+}
+
+.signup-input:focus {
+    outline: none;
+    border-bottom: 1.5px solid #1c1c1c;
+}
+
+.signup-input::placeholder {
+    color: #d0ccc8;
+}
+
+.signup-input-no-margin {
+    margin: 0;
+}
+
+.signup-input-email {
+    margin-top: 8px;
+    margin-bottom: 22px;
+}
+
+.signup-password-wrap {
+    position: relative;
+    margin-top: 8px;
+    margin-bottom: 32px;
+}
+
+.signup-show-toggle {
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 11px;
+    color: #ccc;
+}
+
+.signup-button {
+    width: 100%;
+    padding: 13px;
+    background: #1c1c1c;
+    color: #fff;
+    border: none;
+    border-radius: 9px;
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    cursor: pointer;
+    transition: background 0.2s;
+    margin-bottom: 18px;
+}
+
+.signup-button:hover {
+    background: #333;
+}
+
+.signup-button:disabled {
+    background: #888;
+    cursor: not-allowed;
+}
+
+.signup-divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 18px;
+}
+
+.signup-divider-line {
+    flex: 1;
+    height: 1px;
+    background: #ece8e4;
+}
+
+.signup-divider-text {
+    font-size: 11px;
+    color: #ccc;
+}
+
+.signup-google-button {
+    width: 100%;
+    padding: 11px;
+    background: transparent;
+    border: 1.5px solid #e8e4e0;
+    border-radius: 9px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    font-size: 13px;
+    color: #555;
+    transition: border-color 0.2s;
+    margin-bottom: 28px;
+}
+
+.signup-google-button:hover {
+    border-color: #bbb;
+}
+
+.signup-google-button:disabled {
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+.signup-footer-text {
+    text-align: center;
+    font-size: 12px;
+    color: #c0bbb6;
+}
+
+.signup-signin-link {
+    color: #999;
+    text-decoration: none;
+}

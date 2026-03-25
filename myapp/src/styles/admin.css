@@ -1,0 +1,157 @@
+.admin-page {
+    padding: 24px;
+    max-width: 1100px;
+    margin: 0 auto;
+}
+
+.admin-topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+}
+
+.admin-section {
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    padding: 16px;
+    margin-bottom: 16px;
+}
+
+.admin-section-title {
+    margin: 0;
+}
+
+.admin-section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+}
+
+.admin-alert {
+    padding: 12px;
+    border-radius: 8px;
+    margin-bottom: 16px;
+}
+
+.admin-alert-success {
+    background: #f3fff3;
+    border: 1px solid #bdddbd;
+    color: #1e5d1e;
+}
+
+.admin-alert-error {
+    background: #fff4f4;
+    border: 1px solid #e5bcbc;
+    color: #8a1f1f;
+}
+
+.admin-tabs {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 16px;
+}
+
+.admin-tab {
+    border: 1px solid #ddd;
+    background: #fff;
+    padding: 10px 14px;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.admin-tab.active {
+    background: #111;
+    color: #fff;
+    border-color: #111;
+}
+
+.admin-form {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 12px;
+}
+
+.admin-input {
+    width: 100%;
+    padding: 10px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    box-sizing: border-box;
+}
+
+.admin-input-full {
+    grid-column: 1 / -1;
+}
+
+.admin-form-actions {
+    grid-column: 1 / -1;
+}
+
+.admin-button {
+    border: none;
+    border-radius: 6px;
+    padding: 10px 14px;
+    cursor: pointer;
+}
+
+.admin-button-primary {
+    background: #111;
+    color: #fff;
+}
+
+.admin-button-danger {
+    background: #fff;
+    color: #8a1f1f;
+    border: 1px solid #d7a8a8;
+}
+
+.admin-button-danger:hover {
+    background: #fff5f5;
+}
+
+.admin-search {
+    width: 100%;
+    max-width: 320px;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    box-sizing: border-box;
+}
+
+.admin-list {
+    display: grid;
+    gap: 10px;
+}
+
+.admin-card {
+    border: 1px solid #eee;
+    border-radius: 8px;
+    padding: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+}
+
+.admin-meta {
+    font-size: 14px;
+    color: #666;
+}
+
+.admin-id {
+    font-size: 12px;
+    color: #999;
+}
+
+.admin-description {
+    font-size: 13px;
+    color: #555;
+    margin-top: 4px;
+}
