@@ -3,7 +3,73 @@ import { useNavigate } from "react-router-dom";
 import { onAuthStateChanged, updateProfile } from "firebase/auth";
 import { api } from "../lib/api.jsx";
 import { auth } from "../firebase";
+import { deleteAccount } from "../services/authService";
 import "../styles/Dashboard.css";
+
+function DeleteAccountModal({ onConfirm, onCancel, loading }) {
+    const user = auth.currentUser;
+    const isGoogleUser = user?.providerData?.some((p) => p.providerId === "google.com");
+    const [password, setPassword] = useState("");
+    const [confirmText, setConfirmText] = useState("");
+    const CONFIRM_WORD = "DELETE";
+    const canSubmit = confirmText === CONFIRM_WORD && (isGoogleUser || password.length > 0);
+
+    return (
+        <div className="delete-modal-overlay" onClick={onCancel}>
+            <div className="delete-modal" onClick={(e) => e.stopPropagation()}>
+                <div className="delete-modal-icon">⚠️</div>
+                <h2 className="delete-modal-title">Delete Account</h2>
+                <p className="delete-modal-body">
+                    This action is <strong>permanent and irreversible</strong>. All your
+                    meal plans, preferences, and account data will be deleted.
+                </p>
+
+                {!isGoogleUser && (
+                    <>
+                        <label className="delete-modal-label">Confirm your password</label>
+                        <input
+                            type="password"
+                            className="delete-modal-input"
+                            placeholder="Your current password"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            autoComplete="current-password"
+                        />
+                    </>
+                )}
+
+                <label className="delete-modal-label">
+                    Type <strong>{CONFIRM_WORD}</strong> to confirm
+                </label>
+                <input
+                    type="text"
+                    className="delete-modal-input"
+                    placeholder={CONFIRM_WORD}
+                    value={confirmText}
+                    onChange={(e) => setConfirmText(e.target.value.toUpperCase())}
+                />
+
+                <div className="delete-modal-actions">
+                    <button
+                        className="delete-modal-btn delete-modal-btn-cancel"
+                        onClick={onCancel}
+                        disabled={loading}
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        className="delete-modal-btn delete-modal-btn-confirm"
+                        onClick={() => onConfirm(isGoogleUser ? null : password)}
+                        disabled={!canSubmit || loading}
+                    >
+                        {loading ? "Deleting…" : "Yes, delete my account"}
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+}
+
 
 export default function Dashboard() {
     const navigate = useNavigate();
@@ -20,15 +86,14 @@ export default function Dashboard() {
     const [profileSaving, setProfileSaving] = useState(false);
     const [profileMsg, setProfileMsg] = useState("");
     const [profileError, setProfileError] = useState("");
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [deleteLoading, setDeleteLoading] = useState(false);
 
     const [page, setPage] = useState("dashboard");
     const [date, setDate] = useState("");
     const [showForm, setShowForm] = useState(false);
     const [search, setSearch] = useState("");
     const [selectedMeal, setSelectedMeal] = useState("lunch");
-    const [selectedRecipeMeal, setSelectedRecipeMeal] = useState("lunch");
-    const [mealPlanSaving, setMealPlanSaving] = useState(false);
-    const [mealPlanMsg, setMealPlanMsg] = useState("");
 
     const [meals, setMeals] = useState({
         breakfast: [],
@@ -55,19 +120,6 @@ export default function Dashboard() {
     useEffect(() => {
         let mounted = true;
 
-        async function loadMealPlan() {
-            try {
-                const data = await api.getMealPlan();
-                if (mounted && data?.meals) {
-                    setMeals((prev) => ({ ...prev, ...data.meals }));
-                }
-            } catch (err) {
-                if (mounted && auth.currentUser) {
-                    setError(`Failed to load meal plan: ${err.message}`);
-                }
-            }
-        }
-
         const currentUser = auth.currentUser;
         if (currentUser && mounted) {
             setProfile({
@@ -75,7 +127,6 @@ export default function Dashboard() {
                 email: currentUser.email || "",
                 goal: localStorage.getItem("userGoal") || "",
             });
-            loadMealPlan();
         }
 
         api
@@ -122,9 +173,6 @@ export default function Dashboard() {
                     email: user?.email || "",
                     goal: localStorage.getItem("userGoal") || "",
                 });
-                if (user) {
-                    loadMealPlan();
-                }
             }
         });
 
@@ -154,23 +202,19 @@ export default function Dashboard() {
         }
     }
 
-    async function saveMealPlanToDatabase() {
-        if (!auth.currentUser) {
-            setError("You must be logged in to save your meal plan.");
-            return;
-        }
-
-        setMealPlanSaving(true);
-        setMealPlanMsg("");
-        setError("");
+    async function handleDeleteAccount(password) {
+        setDeleteLoading(true);
+        setProfileError("");
+        setProfileMsg("");
 
         try {
-            await api.saveMealPlan(meals);
-            setMealPlanMsg("Meal plan saved successfully!");
+            await deleteAccount(password);
+            setShowDeleteModal(false);
+            navigate("/login", { replace: true });
         } catch (err) {
-            setError(`Failed to save meal plan: ${err.message}`);
+            setProfileError(err.message || "Failed to delete account.");
         } finally {
-            setMealPlanSaving(false);
+            setDeleteLoading(false);
         }
     }
 
@@ -186,34 +230,10 @@ export default function Dashboard() {
             category: food.category || "",
         };
 
-        const updatedMeals = {
-            ...meals,
-            [targetMeal]: [...meals[targetMeal], newFood],
-        };
-
-        setMeals(updatedMeals);
-        setMealPlanMsg("");
-    }
-
-    function addRecipeToMeal(recipe, meal) {
-        const targetMeal = meal || selectedRecipeMeal;
-
-        const recipeAsMeal = {
-            name: recipe.name,
-            cal: Number(recipe.calories || recipe.cal || 0),
-            protein: Number(recipe.protein || recipe.protein_g || 0),
-            carbs: Number(recipe.carbs || recipe.carbs_g || 0),
-            fats: Number(recipe.fat || recipe.fat_g || recipe.fats || 0),
-            category: recipe.category || "Recipe",
-        };
-
-        const updatedMeals = {
-            ...meals,
-            [targetMeal]: [...meals[targetMeal], recipeAsMeal],
-        };
-
-        setMeals(updatedMeals);
-        setMealPlanMsg("");
+        setMeals((prev) => ({
+            ...prev,
+            [targetMeal]: [...prev[targetMeal], newFood],
+        }));
     }
 
     const filteredFoods = useMemo(() => {
@@ -253,12 +273,10 @@ export default function Dashboard() {
             fats: Number(form.fats) || 0,
         };
 
-        const updatedMeals = {
+        setMeals({
             ...meals,
             [form.meal]: [...meals[form.meal], newFood],
-        };
-
-        setMeals(updatedMeals);
+        });
 
         setForm({
             ...form,
@@ -270,14 +288,11 @@ export default function Dashboard() {
         });
 
         setShowForm(false);
-        setMealPlanMsg("");
     }
 
     function removeFood(meal, index) {
         const updated = meals[meal].filter((_, i) => i !== index);
-        const updatedMeals = { ...meals, [meal]: updated };
-        setMeals(updatedMeals);
-        setMealPlanMsg("");
+        setMeals({ ...meals, [meal]: updated });
     }
 
     function getRecs() {
@@ -365,7 +380,6 @@ export default function Dashboard() {
             </div>
 
             {error && <div className="dashboard-error-banner">{error}</div>}
-            {mealPlanMsg && <div className="dashboard-success-banner">{mealPlanMsg}</div>}
 
             {page === "dashboard" && (
                 <div className="dashboard-layout">
@@ -448,7 +462,7 @@ export default function Dashboard() {
                                         onClick={saveFood}
                                         className="dashboard-btn dashboard-btn-primary dashboard-btn-flex"
                                     >
-                                        Add
+                                        Save
                                     </button>
                                     <button
                                         onClick={() => setShowForm(false)}
@@ -459,16 +473,6 @@ export default function Dashboard() {
                                 </div>
                             </div>
                         )}
-
-                        <div className="dashboard-form-actions">
-                            <button
-                                onClick={saveMealPlanToDatabase}
-                                disabled={mealPlanSaving}
-                                className="dashboard-btn dashboard-btn-primary dashboard-btn-flex"
-                            >
-                                {mealPlanSaving ? "Saving..." : "Save Meal Plan"}
-                            </button>
-                        </div>
 
                         {["breakfast", "lunch", "dinner", "snack"].map((meal) => (
                             <div key={meal} className="dashboard-meal-card">
@@ -699,30 +703,6 @@ export default function Dashboard() {
                     <h2 className="dashboard-page-title">Recipes</h2>
                     <p className="dashboard-page-subtitle">Browse available recipes</p>
 
-                    <div className="dashboard-catalog-toolbar">
-                        <div className="dashboard-catalog-toolbar-group">
-                            <label className="dashboard-toolbar-label">Add to:</label>
-                            <select
-                                value={selectedRecipeMeal}
-                                onChange={(e) => setSelectedRecipeMeal(e.target.value)}
-                                className="dashboard-meal-select"
-                            >
-                                <option value="breakfast">Breakfast</option>
-                                <option value="lunch">Lunch</option>
-                                <option value="dinner">Dinner</option>
-                                <option value="snack">Snack</option>
-                            </select>
-                        </div>
-
-                        <button
-                            onClick={saveMealPlanToDatabase}
-                            disabled={mealPlanSaving}
-                            className="dashboard-btn dashboard-btn-primary"
-                        >
-                            {mealPlanSaving ? "Saving..." : "Save Meal Plan"}
-                        </button>
-                    </div>
-
                     {loadingRecipes ? (
                         <p className="dashboard-status-text">Loading recipes...</p>
                     ) : recipes.length === 0 ? (
@@ -747,13 +727,6 @@ export default function Dashboard() {
                                         {recipe.calories} cal · P {recipe.protein}g · C{" "}
                                         {recipe.carbs}g · F {recipe.fat || recipe.fats}g
                                     </p>
-
-                                    <button
-                                        onClick={() => addRecipeToMeal(recipe)}
-                                        className="dashboard-btn dashboard-btn-primary dashboard-btn-small"
-                                    >
-                                        Add Recipe
-                                    </button>
                                 </div>
                             ))}
                         </div>
@@ -821,7 +794,7 @@ export default function Dashboard() {
                                 {profileSaving ? "Saving..." : "Save Changes"}
                             </button>
                             <button
-                                onClick={() => alert("Delete account coming soon.")}
+                                onClick={() => setShowDeleteModal(true)}
                                 className="dashboard-btn dashboard-btn-outline"
                             >
                                 Delete Account
@@ -856,6 +829,16 @@ export default function Dashboard() {
                         </div>
                     </div>
                 </div>
+            )}
+
+            {showDeleteModal && (
+                <DeleteAccountModal
+                    loading={deleteLoading}
+                    onCancel={() => {
+                        if (!deleteLoading) setShowDeleteModal(false);
+                    }}
+                    onConfirm={handleDeleteAccount}
+                />
             )}
         </div>
     );

@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { signInWithPopup } from "firebase/auth";
 import { auth, provider } from "../firebase";
-import { Link, useNavigate } from "react-router-dom";import { signUp, signInWithGoogle } from "../services/authService";
+import { Link, useNavigate } from "react-router-dom";
+import { signUp, signInWithGoogle } from "../services/authService";
 import "../styles/Signup.css";
 
 export default function Signup() {
@@ -34,41 +35,15 @@ export default function Signup() {
     };
 
     const handleGoogleSignup = async () => {
-    try {
-        // 1. Open Google login popup (Firebase handles login OR account creation)
-        const result = await signInWithPopup(auth, provider);
-
-        // 2. Get the Firebase ID token (this proves user identity to backend)
-        const token = await result.user.getIdToken();
-
-        // 3. Store token locally so future API requests can include it
-        localStorage.setItem("token", token);
-
-        // 4. Send token to Spring Boot backend
-        //    Backend will verify it using Firebase Admin SDK
-        const res = await fetch("https://mealtracker-86x4.onrender.com/api/users/profile", {
-            method: "GET",
-            headers: {
-                Authorization: `Bearer ${token}`,
-            },
-        });
-
-        // 5. If backend rejects the token, authentication failed
-        if (!res.ok) {
-            throw new Error("Backend authentication failed");
+        try {
+            const result = await signInWithGoogle();
+            const token = await result.user.getIdToken();
+            localStorage.setItem("token", token);
+            navigate("/dashboard");
+        } catch (err) {
+            setError(err.message.replace("Firebase: ", ""));
         }
-
-        // 6. Backend returns user info (from your UserController)
-        const data = await res.json();
-        console.log("User profile:", data);
-
-        // 7. Redirect to dashboard after successful signup/login
-        navigate("/login");
-
-    } catch (err) {
-        console.error("Google signup failed:", err);
-    }
-};
+    };
 
     return (
         <div className="signup-page">

@@ -33,40 +33,15 @@ export default function Login() {
     };
     
     const handleGoogleLogin = async () => {
-    try {
-        // 1. Open Google login popup
-        const result = await signInWithPopup(auth, provider);
-
-        // 2. Get Firebase ID token
-        const token = await result.user.getIdToken();
-
-        // 3. Save token for future authenticated requests
-        localStorage.setItem("token", token);
-
-        // 4. Call backend to verify token + get user info
-        const res = await fetch("https://mealtracker-86x4.onrender.com/api/users/profile", {
-            method: "GET",
-            headers: {
-                Authorization: `Bearer ${token}`,
-            },
-        });
-
-        // 5. Handle backend failure
-        if (!res.ok) {
-            throw new Error("Backend authentication failed");
+        try {
+            const result = await signInWithGoogle();
+            const token = await result.user.getIdToken();
+            localStorage.setItem("token", token);
+            navigate("/dashboard");
+        } catch (err) {
+            setError(err.message.replace("Firebase: ", ""));
         }
-
-        // 6. Read user data returned from backend
-        const data = await res.json();
-        console.log("User profile:", data);
-
-        // 7. Redirect to dashboard
-        navigate("/dashboard");
-
-    } catch (err) {
-        console.error("Google login failed:", err);
-    }
-};
+    };
 
     return (
         <div className="login-page">
