@@ -61,7 +61,7 @@ export default function Signup() {
         console.log("User profile:", data);
 
         // 7. Redirect to dashboard after successful signup/login
-        navigate("/dashboard");
+        navigate("/login");
 
     } catch (err) {
         console.error("Google signup failed:", err);
