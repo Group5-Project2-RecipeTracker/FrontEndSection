@@ -1,13 +1,30 @@
+import { auth } from "../firebase";
+
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "";
 
+async function getAuthHeaders() {
+  const headers = {
+    "Content-Type": "application/json",
+  };
+
+  const user = auth.currentUser;
+  const token = user ? await user.getIdToken() : localStorage.getItem("token");
+
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
+  return headers;
+}
+
 async function request(path, options = {}) {
   const response = await fetch(`${API_BASE_URL}${path}`, {
+    ...options,
     headers: {
-      "Content-Type": "application/json",
+      ...(await getAuthHeaders()),
       ...(options.headers || {}),
     },
-    ...options,
   });
 
   if (!response.ok) {
@@ -55,6 +72,16 @@ export const api = {
   deleteRecipe: (id) =>
     request(`/api/recipes/${id}`, {
       method: "DELETE",
+    }),
+
+  getMealPlan: () => request("/api/meal-plans"),
+  saveMealPlan: (meals) =>
+    request("/api/meal-plans", {
+      method: "POST",
+      body: JSON.stringify({
+        meals,
+        updatedAt: new Date().toISOString(),
+      }),
     }),
 
   health: () => request("/api/health"),
