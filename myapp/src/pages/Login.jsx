@@ -1,5 +1,7 @@
 import { useState } from "react";
+import { signInWithPopup } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
+import { auth, provider } from "../firebase";
 import { signIn, signInWithGoogle } from "../services/authService";
 import "../styles/Login.css";
 
@@ -29,20 +31,42 @@ export default function Login() {
             setLoading(false);
         }
     };
+    
+    const handleGoogleLogin = async () => {
+    try {
+        // 1. Open Google login popup
+        const result = await signInWithPopup(auth, provider);
 
-    const handleGoogle = async () => {
-        setError("");
-        setLoading(true);
+        // 2. Get Firebase ID token
+        const token = await result.user.getIdToken();
 
-        try {
-            await signInWithGoogle();
-            navigate("/dashboard");
-        } catch (err) {
-            setError(err.message.replace("Firebase: ", ""));
-        } finally {
-            setLoading(false);
+        // 3. Save token for future authenticated requests
+        localStorage.setItem("token", token);
+
+        // 4. Call backend to verify token + get user info
+        const res = await fetch("https://mealtracker-86x4.onrender.com/api/users/profile", {
+            method: "GET",
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
+        });
+
+        // 5. Handle backend failure
+        if (!res.ok) {
+            throw new Error("Backend authentication failed");
         }
-    };
+
+        // 6. Read user data returned from backend
+        const data = await res.json();
+        console.log("User profile:", data);
+
+        // 7. Redirect to dashboard
+        navigate("/dashboard");
+
+    } catch (err) {
+        console.error("Google login failed:", err);
+    }
+};
 
     return (
         <div className="login-page">
@@ -97,11 +121,13 @@ export default function Login() {
                     <div className="login-divider-line" />
                 </div>
 
+
                 <button
-                    className="login-google-button"
-                    onClick={handleGoogle}
+                    className="gbtn"
+                    onClick={handleGoogleLogin}
                     disabled={loading}
                 >
+
                     <svg width="17" height="17" viewBox="0 0 18 18" fill="none">
                         <path
                             d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908C16.658 14.013 17.64 11.706 17.64 9.2z"
