@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { signInWithPopup } from "firebase/auth";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { auth, provider } from "../firebase";
 import { signIn, signInWithGoogle } from "../services/authService";
 import "../styles/Login.css";
@@ -151,9 +151,9 @@ export default function Login() {
 
                 <p className="login-footer-text">
                     No account?{" "}
-                    <a href="/signup" className="login-signup-link">
-                        Sign up
-                    </a>
+                  <Link to="/signup" className="login-signup-link">
+                      Sign up
+                  </Link>
                 </p>
             </div>
         </div>
