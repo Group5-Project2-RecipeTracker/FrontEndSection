@@ -52,6 +52,19 @@ export default function Dashboard() {
     useEffect(() => {
         let mounted = true;
 
+        async function loadMealPlan() {
+            try {
+                const data = await api.getMealPlan();
+                if (mounted && data?.meals) {
+                    setMeals((prev) => ({ ...prev, ...data.meals }));
+                }
+            } catch (err) {
+                if (mounted && auth.currentUser) {
+                    setError(`Failed to load meal plan: ${err.message}`);
+                }
+            }
+        }
+
         const currentUser = auth.currentUser;
         if (currentUser && mounted) {
             setProfile({
@@ -59,6 +72,7 @@ export default function Dashboard() {
                 email: currentUser.email || "",
                 goal: localStorage.getItem("userGoal") || "",
             });
+            loadMealPlan();
         }
 
         api
@@ -105,6 +119,9 @@ export default function Dashboard() {
                     email: user?.email || "",
                     goal: localStorage.getItem("userGoal") || "",
                 });
+                if (user) {
+                    loadMealPlan();
+                }
             }
         });
 
@@ -134,6 +151,15 @@ export default function Dashboard() {
         }
     }
 
+    async function persistMeals(updatedMeals) {
+        if (!auth.currentUser) return;
+        try {
+            await api.saveMealPlan(updatedMeals);
+        } catch (err) {
+            setError(`Failed to save meal plan: ${err.message}`);
+        }
+    }
+
     function addCatalogFood(food, meal) {
         const targetMeal = meal || selectedMeal;
 
@@ -146,10 +172,13 @@ export default function Dashboard() {
             category: food.category || "",
         };
 
-        setMeals((prev) => ({
-            ...prev,
-            [targetMeal]: [...prev[targetMeal], newFood],
-        }));
+        const updatedMeals = {
+            ...meals,
+            [targetMeal]: [...meals[targetMeal], newFood],
+        };
+
+        setMeals(updatedMeals);
+        persistMeals(updatedMeals);
     }
 
     const filteredFoods = useMemo(() => {
@@ -189,10 +218,13 @@ export default function Dashboard() {
             fats: Number(form.fats) || 0,
         };
 
-        setMeals({
+        const updatedMeals = {
             ...meals,
             [form.meal]: [...meals[form.meal], newFood],
-        });
+        };
+
+        setMeals(updatedMeals);
+        persistMeals(updatedMeals);
 
         setForm({
             ...form,
@@ -208,7 +240,9 @@ export default function Dashboard() {
 
     function removeFood(meal, index) {
         const updated = meals[meal].filter((_, i) => i !== index);
-        setMeals({ ...meals, [meal]: updated });
+        const updatedMeals = { ...meals, [meal]: updated };
+        setMeals(updatedMeals);
+        persistMeals(updatedMeals);
     }
 
     function getRecs() {
