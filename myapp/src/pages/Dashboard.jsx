@@ -1,7 +1,26 @@
 import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { onAuthStateChanged, updateProfile } from "firebase/auth";
 import { api } from "../lib/api.jsx";
+import { auth } from "../firebase";
+import "../styles/Dashboard.css";
 
-export default function App() {
+export default function Dashboard() {
+    const navigate = useNavigate();
+
+    const [isAdmin, setIsAdmin] = useState(
+        auth.currentUser?.email === "admin@email.com"
+    );
+
+    const [profile, setProfile] = useState({
+        name: "",
+        email: "",
+        goal: "",
+    });
+    const [profileSaving, setProfileSaving] = useState(false);
+    const [profileMsg, setProfileMsg] = useState("");
+    const [profileError, setProfileError] = useState("");
+
     const [page, setPage] = useState("dashboard");
     const [date, setDate] = useState("");
     const [showForm, setShowForm] = useState(false);
@@ -12,7 +31,7 @@ export default function App() {
         breakfast: [],
         lunch: [],
         dinner: [],
-        snack: []
+        snack: [],
     });
 
     const [form, setForm] = useState({
@@ -21,13 +40,7 @@ export default function App() {
         calories: "",
         protein: "",
         carbs: "",
-        fats: ""
-    });
-
-    const [profile, setProfile] = useState({
-        name: "",
-        email: "",
-        goal: ""
+        fats: "",
     });
 
     const [foods, setFoods] = useState([]);
@@ -37,54 +50,113 @@ export default function App() {
     const [error, setError] = useState("");
 
     useEffect(() => {
-        loadFoods();
-        loadRecipes();
+        let mounted = true;
+
+        const currentUser = auth.currentUser;
+        if (currentUser && mounted) {
+            setProfile({
+                name: currentUser.displayName || "",
+                email: currentUser.email || "",
+                goal: localStorage.getItem("userGoal") || "",
+            });
+        }
+
+        api
+            .getFoods()
+            .then((data) => {
+                if (mounted) {
+                    setFoods(Array.isArray(data) ? data : []);
+                }
+            })
+            .catch((err) => {
+                if (mounted) {
+                    setError(`Failed to load foods: ${err.message}`);
+                }
+            })
+            .finally(() => {
+                if (mounted) {
+                    setLoadingFoods(false);
+                }
+            });
+
+        api
+            .getRecipes()
+            .then((data) => {
+                if (mounted) {
+                    setRecipes(Array.isArray(data) ? data : []);
+                }
+            })
+            .catch((err) => {
+                if (mounted) {
+                    setError(`Failed to load recipes: ${err.message}`);
+                }
+            })
+            .finally(() => {
+                if (mounted) {
+                    setLoadingRecipes(false);
+                }
+            });
+
+        const unsubscribe = onAuthStateChanged(auth, (user) => {
+            if (mounted) {
+                setIsAdmin(user?.email === "admin@email.com");
+                setProfile({
+                    name: user?.displayName || "",
+                    email: user?.email || "",
+                    goal: localStorage.getItem("userGoal") || "",
+                });
+            }
+        });
+
+        return () => {
+            mounted = false;
+            unsubscribe();
+        };
     }, []);
 
-    async function loadFoods() {
-        try {
-            setLoadingFoods(true);
-            const data = await api.getFoods();
-            setFoods(Array.isArray(data) ? data : []);
-        } catch (err) {
-            setError(`Failed to load foods: ${err.message}`);
-        } finally {
-            setLoadingFoods(false);
-        }
-    }
+    async function saveProfile() {
+        setProfileSaving(true);
+        setProfileMsg("");
+        setProfileError("");
 
-    async function loadRecipes() {
         try {
-            setLoadingRecipes(true);
-            const data = await api.getRecipes();
-            setRecipes(Array.isArray(data) ? data : []);
+            const user = auth.currentUser;
+            if (!user) throw new Error("Not logged in.");
+
+            await updateProfile(user, { displayName: profile.name });
+            localStorage.setItem("userGoal", profile.goal);
+
+            setProfileMsg("Profile saved successfully!");
         } catch (err) {
-            setError(`Failed to load recipes: ${err.message}`);
+            setProfileError("Failed to save: " + err.message);
         } finally {
-            setLoadingRecipes(false);
+            setProfileSaving(false);
         }
     }
 
     function addCatalogFood(food, meal) {
         const targetMeal = meal || selectedMeal;
+
         const newFood = {
             name: food.name,
             cal: Number(food.calories || food.cal || 0),
             protein: Number(food.protein_g || food.protein || 0),
             carbs: Number(food.carbs_g || food.carbs || 0),
             fats: Number(food.fat_g || food.fat || food.fats || 0),
-            category: food.category || ""
+            category: food.category || "",
         };
-        setMeals(prev => ({
+
+        setMeals((prev) => ({
             ...prev,
-            [targetMeal]: [...prev[targetMeal], newFood]
+            [targetMeal]: [...prev[targetMeal], newFood],
         }));
     }
 
     const filteredFoods = useMemo(() => {
         const q = search.trim().toLowerCase();
         if (!q) return foods;
-        return foods.filter(food => {
+
+        return foods.filter((food) => {
             const name = (food.name || "").toLowerCase();
             const category = (food.category || "").toLowerCase();
             return name.includes(q) || category.includes(q);
@@ -95,7 +167,7 @@ export default function App() {
         ...meals.breakfast,
         ...meals.lunch,
         ...meals.dinner,
-        ...meals.snack
+        ...meals.snack,
     ];
 
     const totalCal = allFoods.reduce((a, b) => a + b.cal, 0);
@@ -108,18 +180,29 @@ export default function App() {
             alert("Name and calories are required.");
             return;
         }
+
         const newFood = {
             name: form.name,
             cal: Number(form.calories),
             protein: Number(form.protein) || 0,
             carbs: Number(form.carbs) || 0,
-            fats: Number(form.fats) || 0
+            fats: Number(form.fats) || 0,
         };
+
         setMeals({
             ...meals,
-            [form.meal]: [...meals[form.meal], newFood]
+            [form.meal]: [...meals[form.meal], newFood],
         });
-        setForm({ ...form, name: "", calories: "", protein: "", carbs: "", fats: "" });
+
+        setForm({
+            ...form,
+            name: "",
+            calories: "",
+            protein: "",
+            carbs: "",
+            fats: "",
+        });
+
         setShowForm(false);
     }
 
@@ -130,72 +213,98 @@ export default function App() {
 
     function getRecs() {
         const recs = [];
-        const proteinFoods = ["grilled chicken", "scrambled eggs", "Greek yogurt", "tuna sandwich", "beans or lentils"];
-        const carbFoods = ["brown rice", "oatmeal", "whole grain toast", "banana", "sweet potatoes"];
-        const fatFoods = ["avocado", "almonds or walnuts", "peanut butter", "olive oil", "chia seeds"];
-        const balancedMeals = ["chicken with rice and vegetables", "salmon with quinoa", "turkey sandwich with avocado", "tofu stir fry with rice", "egg scramble with toast"];
-        function random(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
-        if (totalCal < 1000) recs.push("You're under your calorie goal. Try something like " + random(balancedMeals) + ".");
-        if (totalCal > 2000) recs.push("You've gone over your calorie goal today. Consider lighter meals like grilled chicken salad or vegetables with lean protein.");
-        if (totalProtein < 75) recs.push("Protein is low. Try adding " + random(proteinFoods) + ".");
-        if (totalCarbs < 100) recs.push("Carbs are low. A good option could be " + random(carbFoods) + ".");
-        if (totalFats < 30) recs.push("Healthy fats are low. Try adding " + random(fatFoods) + ".");
-        if (totalProtein >= 150) recs.push("Protein goal reached! Great job hitting your target.");
+        const proteinFoods = [
+            "grilled chicken",
+            "scrambled eggs",
+            "Greek yogurt",
+            "tuna sandwich",
+            "beans or lentils",
+        ];
+        const carbFoods = [
+            "brown rice",
+            "oatmeal",
+            "whole grain toast",
+            "banana",
+            "sweet potatoes",
+        ];
+        const fatFoods = [
+            "avocado",
+            "almonds or walnuts",
+            "peanut butter",
+            "olive oil",
+            "chia seeds",
+        ];
+        const balancedMeals = [
+            "chicken with rice and vegetables",
+            "salmon with quinoa",
+            "turkey sandwich with avocado",
+            "tofu stir fry with rice",
+            "egg scramble with toast",
+        ];
+
+        function random(arr) {
+            return arr[Math.floor(Math.random() * arr.length)];
+        }
+
+        if (totalCal < 1000) {
+            recs.push(
+                "You're under your calorie goal. Try something like " +
+                    random(balancedMeals) +
+                    "."
+            );
+        }
+
+        if (totalCal > 2000) {
+            recs.push(
+                "You've gone over your calorie goal today. Consider lighter meals like grilled chicken salad or vegetables with lean protein."
+            );
+        }
+
+        if (totalProtein < 75) {
+            recs.push("Protein is low. Try adding " + random(proteinFoods) + ".");
+        }
+
+        if (totalCarbs < 100) {
+            recs.push("Carbs are low. A good option could be " + random(carbFoods) + ".");
+        }
+
+        if (totalFats < 30) {
+            recs.push("Healthy fats are low. Try adding " + random(fatFoods) + ".");
+        }
+
+        if (totalProtein >= 150) {
+            recs.push("Protein goal reached! Great job hitting your target.");
+        }
+
         return recs;
     }
 
-    const inputStyle = {
-        display: "block",
-        width: "100%",
-        padding: "8px 10px",
-        marginBottom: 10,
-        border: "1px solid #ddd",
-        borderRadius: 6,
-        fontSize: 13,
-        boxSizing: "border-box"
-    };
-
     return (
-        <div style={{ fontFamily: "Arial, sans-serif", background: "#f5f5f5", minHeight: "100vh" }}>
-            {/* Nav */}
-            <div style={{ background: "white", borderBottom: "1px solid #ddd", display: "flex", alignItems: "center", padding: "0 20px", height: 52 }}>
-                {["dashboard", "catalog", "recipes", "profile"].map(p => (
+        <div className="dashboard-shell">
+            <div className="dashboard-nav">
+                {["dashboard", "catalog", "recipes", "profile"].map((p) => (
                     <button
                         key={p}
                         onClick={() => setPage(p)}
-                        style={{
-                            background: "none",
-                            border: "none",
-                            borderBottom: page === p ? "2px solid #333" : "2px solid transparent",
-                            cursor: "pointer",
-                            fontSize: 14,
-                            padding: "0 12px",
-                            height: 52,
-                            color: page === p ? "#111" : "#888",
-                            textTransform: "capitalize"
-                        }}
+                        className={`dashboard-nav-button ${page === p ? "active" : ""}`}
                     >
-                        {p === "catalog" ? "Food Catalog" : p.charAt(0).toUpperCase() + p.slice(1)}
+                        {p === "catalog"
+                            ? "Food Catalog"
+                            : p.charAt(0).toUpperCase() + p.slice(1)}
                     </button>
                 ))}
             </div>
 
-            {error && (
-                <div style={{ background: "#fff4f4", border: "1px solid #e5bcbc", color: "#8a1f1f", padding: 12, margin: 16, borderRadius: 8 }}>
-                    {error}
-                </div>
-            )}
+            {error && <div className="dashboard-error-banner">{error}</div>}
 
-            {/* Dashboard */}
             {page === "dashboard" && (
-                <div style={{ display: "flex", height: "calc(100vh - 52px)" }}>
-                    {/* Left - Food Log */}
-                    <div style={{ width: 280, background: "white", borderRight: "1px solid #ddd", padding: 18, overflowY: "auto" }}>
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
-                            <h2 style={{ margin: 0, fontSize: 16 }}>Food Log</h2>
+                <div className="dashboard-layout">
+                    <div className="dashboard-sidebar left">
+                        <div className="dashboard-sidebar-header">
+                            <h2 className="dashboard-sidebar-title">Food Log</h2>
                             <button
                                 onClick={() => setShowForm(!showForm)}
-                                style={{ background: "#333", color: "white", border: "none", borderRadius: 6, padding: "6px 12px", fontSize: 12, cursor: "pointer" }}
+                                className="dashboard-btn dashboard-btn-primary dashboard-btn-small"
                             >
                                 + Add
                             </button>
@@ -204,45 +313,107 @@ export default function App() {
                         <input
                             type="date"
                             value={date}
-                            onChange={e => setDate(e.target.value)}
-                            style={{ ...inputStyle, marginBottom: 14 }}
+                            onChange={(e) => setDate(e.target.value)}
+                            className="dashboard-form-control dashboard-date-input"
                         />
 
                         {showForm && (
-                            <div style={{ background: "#f9f9f9", border: "1px solid #ddd", borderRadius: 8, padding: 14, marginBottom: 14 }}>
-                                <select value={form.meal} onChange={e => setForm({ ...form, meal: e.target.value })} style={inputStyle}>
+                            <div className="dashboard-food-form-card">
+                                <select
+                                    value={form.meal}
+                                    onChange={(e) => setForm({ ...form, meal: e.target.value })}
+                                    className="dashboard-form-control"
+                                >
                                     <option value="breakfast">Breakfast</option>
                                     <option value="lunch">Lunch</option>
                                     <option value="dinner">Dinner</option>
                                     <option value="snack">Snack</option>
                                 </select>
-                                <input placeholder="Food name *" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} style={inputStyle} />
-                                <input placeholder="Calories *" type="number" value={form.calories} onChange={e => setForm({ ...form, calories: e.target.value })} style={inputStyle} />
-                                <input placeholder="Protein (g)" type="number" value={form.protein} onChange={e => setForm({ ...form, protein: e.target.value })} style={inputStyle} />
-                                <input placeholder="Carbs (g)" type="number" value={form.carbs} onChange={e => setForm({ ...form, carbs: e.target.value })} style={inputStyle} />
-                                <input placeholder="Fats (g)" type="number" value={form.fats} onChange={e => setForm({ ...form, fats: e.target.value })} style={inputStyle} />
-                                <div style={{ display: "flex", gap: 8 }}>
-                                    <button onClick={saveFood} style={{ flex: 1, background: "#333", color: "white", border: "none", borderRadius: 6, padding: 8, cursor: "pointer" }}>Save</button>
-                                    <button onClick={() => setShowForm(false)} style={{ flex: 1, background: "#eee", border: "none", borderRadius: 6, padding: 8, cursor: "pointer" }}>Cancel</button>
+
+                                <input
+                                    placeholder="Food name *"
+                                    value={form.name}
+                                    onChange={(e) => setForm({ ...form, name: e.target.value })}
+                                    className="dashboard-form-control"
+                                />
+
+                                <input
+                                    placeholder="Calories *"
+                                    type="number"
+                                    value={form.calories}
+                                    onChange={(e) =>
+                                        setForm({ ...form, calories: e.target.value })
+                                    }
+                                    className="dashboard-form-control"
+                                />
+
+                                <input
+                                    placeholder="Protein (g)"
+                                    type="number"
+                                    value={form.protein}
+                                    onChange={(e) =>
+                                        setForm({ ...form, protein: e.target.value })
+                                    }
+                                    className="dashboard-form-control"
+                                />
+
+                                <input
+                                    placeholder="Carbs (g)"
+                                    type="number"
+                                    value={form.carbs}
+                                    onChange={(e) => setForm({ ...form, carbs: e.target.value })}
+                                    className="dashboard-form-control"
+                                />
+
+                                <input
+                                    placeholder="Fats (g)"
+                                    type="number"
+                                    value={form.fats}
+                                    onChange={(e) => setForm({ ...form, fats: e.target.value })}
+                                    className="dashboard-form-control"
+                                />
+
+                                <div className="dashboard-form-actions">
+                                    <button
+                                        onClick={saveFood}
+                                        className="dashboard-btn dashboard-btn-primary dashboard-btn-flex"
+                                    >
+                                        Save
+                                    </button>
+                                    <button
+                                        onClick={() => setShowForm(false)}
+                                        className="dashboard-btn dashboard-btn-secondary dashboard-btn-flex"
+                                    >
+                                        Cancel
+                                    </button>
                                 </div>
                             </div>
                         )}
 
-                        {["breakfast", "lunch", "dinner", "snack"].map(meal => (
-                            <div key={meal} style={{ background: "#f9f9f9", border: "1px solid #eee", borderRadius: 8, padding: 12, marginBottom: 10 }}>
-                                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
-                                    <b style={{ fontSize: 13, textTransform: "capitalize" }}>{meal}</b>
-                                    <span style={{ fontSize: 12, color: "#999" }}>{meals[meal].reduce((a, b) => a + b.cal, 0)} kcal</span>
+                        {["breakfast", "lunch", "dinner", "snack"].map((meal) => (
+                            <div key={meal} className="dashboard-meal-card">
+                                <div className="dashboard-meal-card-header">
+                                    <b className="dashboard-meal-name">{meal}</b>
+                                    <span className="dashboard-meal-calories">
+                                        {meals[meal].reduce((a, b) => a + b.cal, 0)} kcal
+                                    </span>
                                 </div>
+
                                 {meals[meal].length === 0 && (
-                                    <p style={{ fontSize: 12, color: "#ccc", margin: 0, textAlign: "center" }}>Nothing logged</p>
+                                    <p className="dashboard-meal-empty">Nothing logged</p>
                                 )}
+
                                 {meals[meal].map((f, i) => (
-                                    <div key={i} style={{ display: "flex", justifyContent: "space-between", fontSize: 12, borderTop: "1px solid #eee", padding: "4px 0" }}>
+                                    <div key={i} className="dashboard-meal-item">
                                         <span>{f.name}</span>
-                                        <span style={{ color: "#999" }}>
+                                        <span className="dashboard-meal-item-calories">
                                             {f.cal} cal
-                                            <button onClick={() => removeFood(meal, i)} style={{ background: "none", border: "none", color: "#bbb", cursor: "pointer", marginLeft: 4 }}>×</button>
+                                            <button
+                                                onClick={() => removeFood(meal, i)}
+                                                className="dashboard-meal-remove-button"
+                                            >
+                                                ×
+                                            </button>
                                         </span>
                                     </div>
                                 ))}
@@ -250,49 +421,89 @@ export default function App() {
                         ))}
                     </div>
 
-                    {/* Center - Overview */}
-                    <div style={{ flex: 1, padding: 24, overflowY: "auto" }}>
-                        <h2 style={{ margin: "0 0 4px" }}>Today's Overview</h2>
-                        <p style={{ margin: "0 0 20px", fontSize: 13, color: "#999" }}>{date || "No date selected"}</p>
+                    <div className="dashboard-main">
+                        <div className="dashboard-overview-header">
+                            <div>
+                                <h2 className="dashboard-overview-title">Today's Overview</h2>
+                                <p className="dashboard-overview-date">
+                                    {date || "No date selected"}
+                                </p>
+                            </div>
 
-                        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 20 }}>
+                            {isAdmin && (
+                                <button
+                                    type="button"
+                                    onClick={() => navigate("/admin")}
+                                    className="dashboard-btn dashboard-btn-primary"
+                                >
+                                    Admin
+                                </button>
+                            )}
+                        </div>
+
+                        <div className="dashboard-stats-grid">
                             {[
                                 { label: "Calories", value: totalCal, goal: 2000, unit: "" },
                                 { label: "Protein", value: totalProtein, goal: 150, unit: "g" },
                                 { label: "Carbs", value: totalCarbs, goal: 225, unit: "g" },
-                                { label: "Fats", value: totalFats, goal: 65, unit: "g" }
+                                { label: "Fats", value: totalFats, goal: 65, unit: "g" },
                             ].map(({ label, value, goal, unit }) => (
-                                <div key={label} style={{ background: "white", border: "1px solid #eee", borderRadius: 10, padding: 14 }}>
-                                    <p style={{ margin: "0 0 4px", fontSize: 11, color: "#999" }}>{label}</p>
-                                    <p style={{ margin: "0 0 8px", fontSize: 20, fontWeight: "bold" }}>
-                                        {value}{unit} <span style={{ fontSize: 13, color: "#aaa", fontWeight: "normal" }}>/ {goal}{unit}</span>
+                                <div key={label} className="dashboard-stat-card">
+                                    <p className="dashboard-stat-label">{label}</p>
+                                    <p className="dashboard-stat-value">
+                                        {value}
+                                        {unit}{" "}
+                                        <span className="dashboard-stat-goal">
+                                            / {goal}
+                                            {unit}
+                                        </span>
                                     </p>
-                                    <div style={{ height: 4, background: "#eee", borderRadius: 99 }}>
-                                        <div style={{ width: Math.min((value / goal) * 100, 100) + "%", height: "100%", background: "#555", borderRadius: 99 }} />
+                                    <div className="dashboard-progress-bar">
+                                        <div
+                                            className="dashboard-progress-fill"
+                                            style={{
+                                                width:
+                                                    Math.min((value / goal) * 100, 100) + "%",
+                                            }}
+                                        />
                                     </div>
                                 </div>
                             ))}
                         </div>
 
                         {allFoods.length === 0 ? (
-                            <div style={{ background: "white", border: "1px solid #eee", borderRadius: 10, padding: 40, textAlign: "center" }}>
-                                <p style={{ color: "#bbb", marginBottom: 12 }}>No meals logged yet</p>
-                                <button onClick={() => setShowForm(true)} style={{ background: "#333", color: "white", border: "none", borderRadius: 6, padding: "9px 18px", cursor: "pointer" }}>
+                            <div className="dashboard-empty-state-card">
+                                <p className="dashboard-empty-state-text">No meals logged yet</p>
+                                <button
+                                    onClick={() => setShowForm(true)}
+                                    className="dashboard-btn dashboard-btn-primary"
+                                >
                                     Log Your First Meal
                                 </button>
                             </div>
                         ) : (
-                            <div style={{ background: "white", border: "1px solid #eee", borderRadius: 10, padding: 20 }}>
-                                <h3 style={{ margin: "0 0 14px", fontSize: 14 }}>Meal Breakdown</h3>
-                                {["breakfast", "lunch", "dinner", "snack"].map(meal => {
+                            <div className="dashboard-breakdown-card">
+                                <h3 className="dashboard-breakdown-title">Meal Breakdown</h3>
+
+                                {["breakfast", "lunch", "dinner", "snack"].map((meal) => {
                                     if (meals[meal].length === 0) return null;
+
                                     return (
-                                        <div key={meal} style={{ marginBottom: 12 }}>
-                                            <p style={{ margin: "0 0 4px", fontWeight: "bold", fontSize: 13, textTransform: "capitalize" }}>{meal}</p>
+                                        <div key={meal} className="dashboard-breakdown-section">
+                                            <p className="dashboard-breakdown-meal-title">
+                                                {meal}
+                                            </p>
+
                                             {meals[meal].map((f, i) => (
-                                                <div key={i} style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: "#555", padding: "2px 0" }}>
+                                                <div
+                                                    key={i}
+                                                    className="dashboard-breakdown-item"
+                                                >
                                                     <span>{f.name}</span>
-                                                    <span>{f.cal} cal · P {f.protein}g · C {f.carbs}g · F {f.fats}g</span>
+                                                    <span>
+                                                        {f.cal} cal · P {f.protein}g · C {f.carbs}g
+                                                        · F {f.fats}g
+                                                    </span>
                                                 </div>
                                             ))}
                                         </div>
@@ -302,43 +513,60 @@ export default function App() {
                         )}
                     </div>
 
-                    {/* Right - Recommendations */}
-                    <div style={{ width: 280, background: "white", borderLeft: "1px solid #ddd", padding: 18, overflowY: "auto" }}>
-                        <h2 style={{ margin: "0 0 4px", fontSize: 16 }}>Recommendations</h2>
-                        <p style={{ margin: "0 0 16px", fontSize: 12, color: "#999" }}>Based on what you've logged</p>
+                    <div className="dashboard-sidebar right">
+                        <h2 className="dashboard-sidebar-title dashboard-sidebar-title-margin">
+                            Recommendations
+                        </h2>
+                        <p className="dashboard-sidebar-subtitle">
+                            Based on what you've logged
+                        </p>
+
                         {allFoods.length === 0 && (
-                            <p style={{ color: "#bbb", fontSize: 13, textAlign: "center", marginTop: 40 }}>Log food first to see recommendations.</p>
+                            <p className="dashboard-recommendation-empty">
+                                Log food first to see recommendations.
+                            </p>
                         )}
+
                         {allFoods.length > 0 && getRecs().length === 0 && (
-                            <div style={{ background: "#f5f5f5", border: "1px solid #ddd", borderRadius: 8, padding: 14 }}>
-                                <p style={{ margin: 0, fontSize: 13, color: "#555" }}>You're on track with all your goals!</p>
+                            <div className="dashboard-recommendation-card">
+                                <p className="dashboard-recommendation-text">
+                                    You're on track with all your goals!
+                                </p>
                             </div>
                         )}
-                        {allFoods.length > 0 && getRecs().map((rec, i) => (
-                            <div key={i} style={{ background: "#f5f5f5", border: "1px solid #ddd", borderRadius: 8, padding: 12, marginBottom: 8 }}>
-                                <p style={{ margin: 0, fontSize: 12, color: "#444", lineHeight: 1.5 }}>{rec}</p>
-                            </div>
-                        ))}
+
+                        {allFoods.length > 0 &&
+                            getRecs().map((rec, i) => (
+                                <div key={i} className="dashboard-recommendation-card">
+                                    <p className="dashboard-recommendation-text">{rec}</p>
+                                </div>
+                            ))}
                     </div>
                 </div>
             )}
 
-            {/* Food Catalog - live from API */}
             {page === "catalog" && (
-                <div style={{ maxWidth: 880, margin: "0 auto", padding: 24 }}>
-                    <h2 style={{ margin: "0 0 4px" }}>Food Catalog</h2>
-                    <p style={{ margin: "0 0 16px", fontSize: 13, color: "#999" }}>Browse foods and add them to your log</p>
+                <div className="dashboard-page-container dashboard-page-container-wide">
+                    <h2 className="dashboard-page-title">Food Catalog</h2>
+                    <p className="dashboard-page-subtitle">
+                        Browse foods and add them to your log
+                    </p>
 
-                    <div style={{ display: "flex", gap: 12, marginBottom: 20, alignItems: "center", flexWrap: "wrap" }}>
+                    <div className="dashboard-catalog-toolbar">
                         <input
                             placeholder="Search by food or category..."
                             value={search}
-                            onChange={e => setSearch(e.target.value)}
-                            style={{ ...inputStyle, maxWidth: 300, marginBottom: 0 }}
+                            onChange={(e) => setSearch(e.target.value)}
+                            className="dashboard-form-control dashboard-search-input"
                         />
-                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                            <label style={{ fontSize: 13 }}>Add to:</label>
-                            <select value={selectedMeal} onChange={e => setSelectedMeal(e.target.value)} style={{ padding: "8px 10px", border: "1px solid #ddd", borderRadius: 6, fontSize: 13 }}>
+
+                        <div className="dashboard-catalog-toolbar-group">
+                            <label className="dashboard-toolbar-label">Add to:</label>
+                            <select
+                                value={selectedMeal}
+                                onChange={(e) => setSelectedMeal(e.target.value)}
+                                className="dashboard-meal-select"
+                            >
                                 <option value="breakfast">Breakfast</option>
                                 <option value="lunch">Lunch</option>
                                 <option value="dinner">Dinner</option>
@@ -348,21 +576,35 @@ export default function App() {
                     </div>
 
                     {loadingFoods ? (
-                        <p style={{ color: "#999" }}>Loading foods...</p>
+                        <p className="dashboard-status-text">Loading foods...</p>
                     ) : filteredFoods.length === 0 ? (
-                        <p style={{ color: "#bbb", fontSize: 13 }}>No matching foods found.</p>
+                        <p className="dashboard-status-text dashboard-status-text-empty">
+                            No matching foods found.
+                        </p>
                     ) : (
-                        <div style={{ display: "grid", gap: 12 }}>
-                            {filteredFoods.map(food => (
-                                <div key={food.id || food.name} style={{ background: "white", border: "1px solid #eee", borderRadius: 10, padding: 16, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <div className="dashboard-list-grid">
+                            {filteredFoods.map((food) => (
+                                <div
+                                    key={food.id || food.name}
+                                    className="dashboard-list-card"
+                                >
                                     <div>
-                                        <p style={{ margin: "0 0 4px", fontWeight: "bold", fontSize: 14 }}>{food.name}</p>
-                                        <p style={{ margin: "0 0 4px", fontSize: 12, color: "#888" }}>{food.category || "Uncategorized"}</p>
-                                        <p style={{ margin: 0, fontSize: 12, color: "#555" }}>
-                                            {food.calories || food.cal || 0} cal · P {food.protein || 0}g · C {food.carbs || 0}g · F {food.fat || food.fats || 0}g
+                                        <p className="dashboard-list-card-title">{food.name}</p>
+                                        <p className="dashboard-list-card-category">
+                                            {food.category || "Uncategorized"}
+                                        </p>
+                                        <p className="dashboard-list-card-meta">
+                                            {food.calories || food.cal || 0} cal · P{" "}
+                                            {food.protein || food.protein_g || 0}g · C{" "}
+                                            {food.carbs || food.carbs_g || 0}g · F{" "}
+                                            {food.fat || food.fat_g || food.fats || 0}g
                                         </p>
                                     </div>
-                                    <button onClick={() => addCatalogFood(food)} style={{ background: "#333", color: "white", border: "none", borderRadius: 6, padding: "8px 14px", fontSize: 12, cursor: "pointer" }}>
+
+                                    <button
+                                        onClick={() => addCatalogFood(food)}
+                                        className="dashboard-btn dashboard-btn-primary dashboard-btn-small"
+                                    >
                                         Add
                                     </button>
                                 </div>
@@ -372,24 +614,34 @@ export default function App() {
                 </div>
             )}
 
-            {/* Recipes - live from API */}
             {page === "recipes" && (
-                <div style={{ maxWidth: 880, margin: "0 auto", padding: 24 }}>
-                    <h2 style={{ margin: "0 0 4px" }}>Recipes</h2>
-                    <p style={{ margin: "0 0 20px", fontSize: 13, color: "#999" }}>Browse available recipes</p>
+                <div className="dashboard-page-container dashboard-page-container-wide">
+                    <h2 className="dashboard-page-title">Recipes</h2>
+                    <p className="dashboard-page-subtitle">Browse available recipes</p>
+
                     {loadingRecipes ? (
-                        <p style={{ color: "#999" }}>Loading recipes...</p>
+                        <p className="dashboard-status-text">Loading recipes...</p>
                     ) : recipes.length === 0 ? (
-                        <p style={{ color: "#bbb", fontSize: 13 }}>No recipes found.</p>
+                        <p className="dashboard-status-text dashboard-status-text-empty">
+                            No recipes found.
+                        </p>
                     ) : (
-                        <div style={{ display: "grid", gap: 12 }}>
-                            {recipes.map(recipe => (
-                                <div key={recipe.id || recipe.name} style={{ background: "white", border: "1px solid #eee", borderRadius: 10, padding: 16 }}>
-                                    <p style={{ margin: "0 0 4px", fontWeight: "bold", fontSize: 14 }}>{recipe.name}</p>
-                                    <p style={{ margin: "0 0 4px", fontSize: 12, color: "#888" }}>{recipe.category}</p>
-                                    <p style={{ margin: "0 0 8px", fontSize: 13, color: "#555" }}>{recipe.description}</p>
-                                    <p style={{ margin: 0, fontSize: 12, color: "#555" }}>
-                                        {recipe.calories} cal · P {recipe.protein}g · C {recipe.carbs}g · F {recipe.fat || recipe.fats}g
+                        <div className="dashboard-list-grid">
+                            {recipes.map((recipe) => (
+                                <div
+                                    key={recipe.id || recipe.name}
+                                    className="dashboard-recipe-card"
+                                >
+                                    <p className="dashboard-list-card-title">{recipe.name}</p>
+                                    <p className="dashboard-list-card-category">
+                                        {recipe.category}
+                                    </p>
+                                    <p className="dashboard-recipe-description">
+                                        {recipe.description}
+                                    </p>
+                                    <p className="dashboard-list-card-meta">
+                                        {recipe.calories} cal · P {recipe.protein}g · C{" "}
+                                        {recipe.carbs}g · F {recipe.fat || recipe.fats}g
                                     </p>
                                 </div>
                             ))}
@@ -398,43 +650,96 @@ export default function App() {
                 </div>
             )}
 
-            {/* Profile */}
             {page === "profile" && (
-                <div style={{ maxWidth: 460, margin: "0 auto", padding: 24 }}>
-                    <h2 style={{ margin: "0 0 4px" }}>Profile</h2>
-                    <p style={{ margin: "0 0 20px", fontSize: 13, color: "#999" }}>Manage your account</p>
+                <div className="dashboard-page-container dashboard-page-container-narrow">
+                    <h2 className="dashboard-page-title">Profile</h2>
+                    <p className="dashboard-page-subtitle">Manage your account</p>
 
-                    <div style={{ background: "white", border: "1px solid #eee", borderRadius: 10, padding: 20, marginBottom: 16 }}>
-                        <p style={{ margin: "0 0 12px", fontSize: 12, color: "#999", textTransform: "uppercase" }}>Account Info</p>
-                        <label style={{ fontSize: 13, fontWeight: "bold" }}>Email</label>
-                        <input type="email" placeholder="you@email.com" value={profile.email} onChange={e => setProfile({ ...profile, email: e.target.value })} style={inputStyle} />
-                        <label style={{ fontSize: 13, fontWeight: "bold" }}>Full Name</label>
-                        <input placeholder="Your name" value={profile.name} onChange={e => setProfile({ ...profile, name: e.target.value })} style={inputStyle} />
-                        <label style={{ fontSize: 13, fontWeight: "bold" }}>Goal</label>
-                        <select value={profile.goal} onChange={e => setProfile({ ...profile, goal: e.target.value })} style={inputStyle}>
+                    {profileMsg && (
+                        <div className="dashboard-success-banner">{profileMsg}</div>
+                    )}
+                    {profileError && (
+                        <div className="dashboard-error-banner">{profileError}</div>
+                    )}
+
+                    <div className="dashboard-profile-card">
+                        <p className="dashboard-profile-section-label">Account Info</p>
+
+                        <label className="dashboard-profile-label">Email</label>
+                        <input
+                            type="email"
+                            placeholder="you@email.com"
+                            value={profile.email}
+                            disabled
+                            className="dashboard-form-control"
+                        />
+                        <p className="dashboard-page-subtitle">
+                            Email cannot be changed here.
+                        </p>
+
+                        <label className="dashboard-profile-label">Full Name</label>
+                        <input
+                            placeholder="Your name"
+                            value={profile.name}
+                            onChange={(e) =>
+                                setProfile({ ...profile, name: e.target.value })
+                            }
+                            className="dashboard-form-control"
+                        />
+
+                        <label className="dashboard-profile-label">Goal</label>
+                        <select
+                            value={profile.goal}
+                            onChange={(e) =>
+                                setProfile({ ...profile, goal: e.target.value })
+                            }
+                            className="dashboard-form-control"
+                        >
                             <option value="">Select a goal</option>
                             <option value="lose">Lose Weight</option>
                             <option value="maintain">Maintain Weight</option>
                             <option value="gain">Gain Muscle</option>
                         </select>
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 4 }}>
-                            <button onClick={() => alert("Saved!")} style={{ background: "#333", color: "white", border: "none", borderRadius: 6, padding: "8px 16px", fontSize: 13, cursor: "pointer" }}>Save Changes</button>
-                            <button onClick={() => alert("Delete account coming soon.")} style={{ background: "none", border: "1px solid #ddd", color: "#999", borderRadius: 6, padding: "8px 16px", fontSize: 13, cursor: "pointer" }}>Delete Account</button>
+
+                        <div className="dashboard-profile-actions">
+                            <button
+                                onClick={saveProfile}
+                                disabled={profileSaving}
+                                className="dashboard-btn dashboard-btn-primary"
+                            >
+                                {profileSaving ? "Saving..." : "Save Changes"}
+                            </button>
+                            <button
+                                onClick={() => alert("Delete account coming soon.")}
+                                className="dashboard-btn dashboard-btn-outline"
+                            >
+                                Delete Account
+                            </button>
                         </div>
                     </div>
 
-                    <div style={{ background: "white", border: "1px solid #eee", borderRadius: 10, padding: 20 }}>
-                        <p style={{ margin: "0 0 14px", fontSize: 12, color: "#999", textTransform: "uppercase" }}>Account Stats</p>
-                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                    <div className="dashboard-profile-card">
+                        <p className="dashboard-profile-section-label">Account Stats</p>
+
+                        <div className="dashboard-account-stats-grid">
                             {[
                                 { label: "Meals Logged", value: allFoods.length },
                                 { label: "Days Tracked", value: date ? 1 : 0 },
                                 { label: "Total Calories", value: totalCal },
-                                { label: "Goal", value: profile.goal ? profile.goal.charAt(0).toUpperCase() + profile.goal.slice(1) : "Not set" }
+                                {
+                                    label: "Goal",
+                                    value: profile.goal
+                                        ? profile.goal.charAt(0).toUpperCase() +
+                                          profile.goal.slice(1)
+                                        : "Not set",
+                                },
                             ].map(({ label, value }) => (
-                                <div key={label} style={{ background: "#f9f9f9", borderRadius: 8, padding: 14 }}>
-                                    <p style={{ margin: "0 0 4px", fontSize: 11, color: "#999" }}>{label}</p>
-                                    <p style={{ margin: 0, fontSize: 18, fontWeight: "bold" }}>{value}</p>
+                                <div
+                                    key={label}
+                                    className="dashboard-account-stat-card"
+                                >
+                                    <p className="dashboard-account-stat-label">{label}</p>
+                                    <p className="dashboard-account-stat-value">{value}</p>
                                 </div>
                             ))}
                         </div>

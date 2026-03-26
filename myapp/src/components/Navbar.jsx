@@ -1,38 +1,44 @@
-import { Link } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { logOut } from "../services/authService";
+import "../styles/Navbar.css";
+import { useEffect, useState } from "react";
+import { auth } from "../firebase";
 
 export default function Navbar() {
-  return (
-    <nav style={styles.nav}>
-      <h2 style={styles.logo}>MyApp</h2>
+    const navigate = useNavigate();
+    const location = useLocation();
+    const [isAdmin, setIsAdmin] = useState(false);
 
-      <div style={styles.links}>
-        <Link to="/dashboard" style={styles.link}>Dashboard</Link>
-        <Link to="/projects" style={styles.link}>Projects</Link>
-        <Link to="/login" style={styles.link}>Login</Link>
-      </div>
-    </nav>
-  );
+    useEffect(() => {
+        const user = auth.currentUser;
+        if (user && user.email === "admin@email.com") {
+            setIsAdmin(true);
+        }
+    }, []);
+    async function handleLogout() {
+        await logOut();
+        navigate("/login");
+    }
+
+    return (
+        <header className="navbar">
+            <div className="navbar__brand">
+                <Link to="/dashboard" className="navbar__brand-link">
+                    Recipe Tracker
+                </Link>
+            </div>
+
+            <nav className="navbar__nav">
+                {isAdmin && location.pathname !== "/admin" && (
+                    <Link to="/admin" className="navbar__link">
+                        Admin
+                    </Link>
+                )}
+
+                <button onClick={handleLogout} className="navbar__logout-button">
+                    Log Out
+                </button>
+            </nav>
+        </header>
+    );
 }
-
-const styles = {
-  nav: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: "16px 24px",
-    background: "#111827",
-    color: "white"
-  },
-  logo: {
-    margin: 0
-  },
-  links: {
-    display: "flex",
-    gap: "20px"
-  },
-  link: {
-    color: "white",
-    textDecoration: "none",
-    fontWeight: "500"
-  }
-};
