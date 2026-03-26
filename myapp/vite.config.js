@@ -11,5 +11,10 @@ export default defineConfig({
         secure: true,
       }
     }
+  },
+  test: {
+    environment: "jsdom",
+    setupFiles: "./src/test/setup.jsx",
+    globals: true
   }
 })
