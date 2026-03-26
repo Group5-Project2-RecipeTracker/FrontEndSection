@@ -26,6 +26,9 @@ export default function Dashboard() {
     const [showForm, setShowForm] = useState(false);
     const [search, setSearch] = useState("");
     const [selectedMeal, setSelectedMeal] = useState("lunch");
+    const [selectedRecipeMeal, setSelectedRecipeMeal] = useState("lunch");
+    const [mealPlanSaving, setMealPlanSaving] = useState(false);
+    const [mealPlanMsg, setMealPlanMsg] = useState("");
 
     const [meals, setMeals] = useState({
         breakfast: [],
@@ -151,12 +154,23 @@ export default function Dashboard() {
         }
     }
 
-    async function persistMeals(updatedMeals) {
-        if (!auth.currentUser) return;
+    async function saveMealPlanToDatabase() {
+        if (!auth.currentUser) {
+            setError("You must be logged in to save your meal plan.");
+            return;
+        }
+
+        setMealPlanSaving(true);
+        setMealPlanMsg("");
+        setError("");
+
         try {
-            await api.saveMealPlan(updatedMeals);
+            await api.saveMealPlan(meals);
+            setMealPlanMsg("Meal plan saved successfully!");
         } catch (err) {
             setError(`Failed to save meal plan: ${err.message}`);
+        } finally {
+            setMealPlanSaving(false);
         }
     }
 
@@ -178,7 +192,28 @@ export default function Dashboard() {
         };
 
         setMeals(updatedMeals);
-        persistMeals(updatedMeals);
+        setMealPlanMsg("");
+    }
+
+    function addRecipeToMeal(recipe, meal) {
+        const targetMeal = meal || selectedRecipeMeal;
+
+        const recipeAsMeal = {
+            name: recipe.name,
+            cal: Number(recipe.calories || recipe.cal || 0),
+            protein: Number(recipe.protein || recipe.protein_g || 0),
+            carbs: Number(recipe.carbs || recipe.carbs_g || 0),
+            fats: Number(recipe.fat || recipe.fat_g || recipe.fats || 0),
+            category: recipe.category || "Recipe",
+        };
+
+        const updatedMeals = {
+            ...meals,
+            [targetMeal]: [...meals[targetMeal], recipeAsMeal],
+        };
+
+        setMeals(updatedMeals);
+        setMealPlanMsg("");
     }
 
     const filteredFoods = useMemo(() => {
@@ -224,7 +259,6 @@ export default function Dashboard() {
         };
 
         setMeals(updatedMeals);
-        persistMeals(updatedMeals);
 
         setForm({
             ...form,
@@ -236,13 +270,14 @@ export default function Dashboard() {
         });
 
         setShowForm(false);
+        setMealPlanMsg("");
     }
 
     function removeFood(meal, index) {
         const updated = meals[meal].filter((_, i) => i !== index);
         const updatedMeals = { ...meals, [meal]: updated };
         setMeals(updatedMeals);
-        persistMeals(updatedMeals);
+        setMealPlanMsg("");
     }
 
     function getRecs() {
@@ -330,6 +365,7 @@ export default function Dashboard() {
             </div>
 
             {error && <div className="dashboard-error-banner">{error}</div>}
+            {mealPlanMsg && <div className="dashboard-success-banner">{mealPlanMsg}</div>}
 
             {page === "dashboard" && (
                 <div className="dashboard-layout">
@@ -412,7 +448,7 @@ export default function Dashboard() {
                                         onClick={saveFood}
                                         className="dashboard-btn dashboard-btn-primary dashboard-btn-flex"
                                     >
-                                        Save
+                                        Add
                                     </button>
                                     <button
                                         onClick={() => setShowForm(false)}
@@ -423,6 +459,16 @@ export default function Dashboard() {
                                 </div>
                             </div>
                         )}
+
+                        <div className="dashboard-form-actions">
+                            <button
+                                onClick={saveMealPlanToDatabase}
+                                disabled={mealPlanSaving}
+                                className="dashboard-btn dashboard-btn-primary dashboard-btn-flex"
+                            >
+                                {mealPlanSaving ? "Saving..." : "Save Meal Plan"}
+                            </button>
+                        </div>
 
                         {["breakfast", "lunch", "dinner", "snack"].map((meal) => (
                             <div key={meal} className="dashboard-meal-card">
@@ -653,6 +699,30 @@ export default function Dashboard() {
                     <h2 className="dashboard-page-title">Recipes</h2>
                     <p className="dashboard-page-subtitle">Browse available recipes</p>
 
+                    <div className="dashboard-catalog-toolbar">
+                        <div className="dashboard-catalog-toolbar-group">
+                            <label className="dashboard-toolbar-label">Add to:</label>
+                            <select
+                                value={selectedRecipeMeal}
+                                onChange={(e) => setSelectedRecipeMeal(e.target.value)}
+                                className="dashboard-meal-select"
+                            >
+                                <option value="breakfast">Breakfast</option>
+                                <option value="lunch">Lunch</option>
+                                <option value="dinner">Dinner</option>
+                                <option value="snack">Snack</option>
+                            </select>
+                        </div>
+
+                        <button
+                            onClick={saveMealPlanToDatabase}
+                            disabled={mealPlanSaving}
+                            className="dashboard-btn dashboard-btn-primary"
+                        >
+                            {mealPlanSaving ? "Saving..." : "Save Meal Plan"}
+                        </button>
+                    </div>
+
                     {loadingRecipes ? (
                         <p className="dashboard-status-text">Loading recipes...</p>
                     ) : recipes.length === 0 ? (
@@ -677,6 +747,13 @@ export default function Dashboard() {
                                         {recipe.calories} cal · P {recipe.protein}g · C{" "}
                                         {recipe.carbs}g · F {recipe.fat || recipe.fats}g
                                     </p>
+
+                                    <button
+                                        onClick={() => addRecipeToMeal(recipe)}
+                                        className="dashboard-btn dashboard-btn-primary dashboard-btn-small"
+                                    >
+                                        Add Recipe
+                                    </button>
                                 </div>
                             ))}
                         </div>
