@@ -7,7 +7,13 @@
 Open a terminal in the project root and run:
 
 cd to myapp
+
+---
+
 npm install
+npm install firebase
+
+npm install -D vitest jsdom @testing-library/react @testing-library/jest-dom
 
 ---
 
