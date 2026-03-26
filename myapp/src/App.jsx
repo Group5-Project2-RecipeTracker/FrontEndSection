@@ -14,7 +14,6 @@ export default function App() {
 
             <Route path="/" element={<Layout />}>
                 <Route index element={<Navigate to="/login" replace />} />
-
                 <Route path="dashboard" element={<Dashboard />} />
                 <Route path="admin" element={<Admin />} />
             </Route>
@@ -23,4 +22,3 @@ export default function App() {
         </Routes>
     );
 }
-

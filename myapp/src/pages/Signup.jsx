@@ -1,8 +1,7 @@
 import { useState } from "react";
 import { signInWithPopup } from "firebase/auth";
 import { auth, provider } from "../firebase";
-import { useNavigate } from "react-router-dom";
-import { signUp, signInWithGoogle } from "../services/authService";
+import { Link, useNavigate } from "react-router-dom";import { signUp, signInWithGoogle } from "../services/authService";
 import "../styles/Signup.css";
 
 export default function Signup() {
@@ -171,9 +170,9 @@ export default function Signup() {
 
                 <p className="signup-footer-text">
                     Already have an account?{" "}
-                    <a href="/login" className="signup-signin-link">
-                        Sign in
-                    </a>
+                   <Link to="/login" className="signup-signin-link">
+                       Sign in
+                   </Link>
                 </p>
             </div>
         </div>
