@@ -44,7 +44,7 @@ export default function Signup() {
 
         // 4. Send token to Spring Boot backend
         //    Backend will verify it using Firebase Admin SDK
-        const res = await fetch("http://localhost:8080/api/users/profile", {
+        const res = await fetch("https://mealtracker-86x4.onrender.com/api/users/profile", {
             method: "GET",
             headers: {
                 Authorization: `Bearer ${token}`,

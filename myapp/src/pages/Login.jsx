@@ -41,7 +41,7 @@ export default function Login() {
         localStorage.setItem("token", token);
 
         // 4. Call backend to verify token + get user info
-        const res = await fetch("http://localhost:8080/api/users/profile", {
+        const res = await fetch("https://mealtracker-86x4.onrender.com/api/users/profile", {
             method: "GET",
             headers: {
                 Authorization: `Bearer ${token}`,
